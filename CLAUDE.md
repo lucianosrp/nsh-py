@@ -59,12 +59,12 @@ nsh.run(Counter, title="Counter")
 - The signal API follows reaktiv/Solid: `s()`, `.set()`, `.update()`, `computed`, `effect`.
 - **Pitfall 1:** a value read without a lambda is read once and isn't reactive. Warn or lint for it.
 - **Pitfall 2:** changing a list or dict in place doesn't notify subscribers. Provide reactive collections, or document the rule.
-- **Open decision:** back Python signals with NSH `Signal<PyObject>`, or use a Python-side signal that drives `dynamic` re-runs. The counter spike decides.
+- **Decided:** the value lives in Python; each signal holds an NSH `Signal<()>` trigger so NSH's graph tracks dependencies (`docs/architecture.md`). Next: `computed`, `effect`, writes from worker threads.
 
 ## Roadmap
 1. ✅ Skeleton (maturin, PyO3, NSH pinned) and research briefs.
-2. **Spike (next):** `nsh.run()` opens a GTK window with a Rust-defined component. Then a Python-defined tree (view/text/button + `class_` + `on_press`). Then the counter with signals. Then a headless test.
-3. CI matrix on ubuntu-24.04, macOS and Windows (build plus import).
-4. `docs/architecture.md`, `CONTRIBUTING.md`, a `doctor.py` setup checker, and setup guides for each OS.
+2. ✅ Spike: `nsh.run()` window + Ctrl-C (Linux), Python trees (view/text/button, `class_`, `on_press`), `nsh.signal` + counter, headless pytest via `nsh-testing` (`nsh.testing.open`). Signal design decided: see `docs/architecture.md`.
+3. CI matrix written (`.github/workflows/ci.yml`) but never run (no remote yet). macOS/Windows builds unverified; Ctrl-C there not wired.
+4. `CONTRIBUTING.md`, a `doctor.py` setup checker, and setup guides for each OS.
 5. Before the sprint: Input and List bindings, reference styled components in Python, an issue list and a dry run on each OS.
 6. Wheels: normal abi3 wheels for macOS and Windows. Linux wheels built on Ubuntu 24.04 that need the system GTK 4.14+ (GTK can't be bundled under manylinux), published per distro or as GitHub release wheels.
