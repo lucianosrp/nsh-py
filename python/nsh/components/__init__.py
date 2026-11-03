@@ -7,5 +7,6 @@ See CONTRIBUTING.md ("Add a component").
 """
 
 from nsh.components.button import button
+from nsh.components.card import card
 
-__all__ = ["button"]
+__all__ = ["button", "card"]
