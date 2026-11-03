@@ -5,7 +5,7 @@ import nsh
 
 def App():
     return nsh.view(
-        nsh.text("200 rows", class_="text-lg font-semibold px-4 py-3"),
+        nsh.text("200 rows", class_="text-lg font-semibold px-4 py-3 text-foreground"),
         nsh.scroll(
             *[
                 nsh.text(
