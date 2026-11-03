@@ -1,0 +1,167 @@
+# Build the wheels and the sdist, and smoke-test every wheel.
+#
+# Reusable: release.yml (on v* tags) and dev-core.yml (on every push to
+# main) call it, and publish what it uploads. It never publishes anything
+# itself. Artifacts: wheels-<platform key> (one wheel each) and sdist.
+#
+# One abi3 wheel per platform covers Python 3.10 and every later version.
+#
+# Linux wheels carry the plain `linux_x86_64` tag, not manylinux. GTK 4
+# can't be bundled, and it isn't on the manylinux whitelist, so no
+# compliant manylinux wheel exists: the wheel needs the system GTK 4.14+
+# (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch). PyPI rejects that tag, and
+# that is fine: the wheels are distributed through GitHub Releases only
+# (`uv ... --find-links <release URL>`), where any tag works.
+name: Build wheels
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+  wheels:
+    name: Wheel (${{ matrix.key }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # key: the name used in artifacts and in the dev-core manifest.
+          - key: linux-x86_64
+            os: ubuntu-24.04
+            # Plain `linux` tag: see the note at the top of this file.
+            args: --compatibility linux
+          - key: macos-arm64
+            os: macos-latest
+          - key: macos-x86_64
+            os: macos-15-intel
+          - key: windows-x86_64
+            os: windows-latest
+    env:
+      # NSH needs macOS 14+; tag the wheels honestly instead of macosx_11_0.
+      MACOSX_DEPLOYMENT_TARGET: "14.0"
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config clang libclang-dev libgtk-4-dev
+
+      - name: Locate libclang (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        # LLVM is preinstalled on windows-latest; bindgen needs LIBCLANG_PATH.
+        run: |
+          echo "LIBCLANG_PATH=C:\\Program Files\\LLVM\\bin" >> "$GITHUB_ENV"
+          ls "/c/Program Files/LLVM/bin" | grep -i libclang || echo "::warning::libclang.dll not found in the default LLVM dir"
+
+      - name: Read the Rust pin from rust-toolchain.toml
+        id: toolchain
+        shell: bash
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          test -n "$channel"
+          echo "channel=$channel" >> "$GITHUB_OUTPUT"
+
+      - name: Install Rust ${{ steps.toolchain.outputs.channel }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.toolchain.outputs.channel }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: wheel-${{ matrix.key }}
+
+      - name: Build wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          command: build
+          # Build on the runner itself (no manylinux container).
+          container: "off"
+          args: --release --out dist ${{ matrix.args }}
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wheels-${{ matrix.key }}
+          path: dist/*.whl
+          if-no-files-found: error
+
+  sdist:
+    name: Source distribution
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+  smoke:
+    # Install each built wheel in a fresh venv and run the headless tests
+    # against the *installed* package (-o pythonpath= drops the repo's
+    # python/ dir from the path, which pyproject.toml adds for pytest).
+    name: Smoke test (${{ matrix.key }}, py${{ matrix.python }})
+    needs: wheels
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { key: linux-x86_64, os: ubuntu-24.04, python: "3.14", required: true }
+          - { key: linux-x86_64, os: ubuntu-24.04, python: "3.10", required: true }
+          # macOS and Windows are not verified yet (AGENTS.md roadmap):
+          # `import nsh` must work, but a failing test run only warns until
+          # the platform track has made the suite pass there.
+          - { key: macos-arm64, os: macos-latest, python: "3.14", required: false }
+          - { key: macos-x86_64, os: macos-15-intel, python: "3.14", required: false }
+          - { key: windows-x86_64, os: windows-latest, python: "3.14", required: false }
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install the GTK 4 runtime (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgtk-4-1
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: wheels-${{ matrix.key }}
+          path: dist
+
+      - name: Install the wheel in a fresh venv and import it
+        run: |
+          python -m venv "$RUNNER_TEMP/smoke"
+          PY="$RUNNER_TEMP/smoke/bin/python"
+          [ -x "$PY" ] || PY="$RUNNER_TEMP/smoke/Scripts/python.exe"
+          echo "PY=$PY" >> "$GITHUB_ENV"
+          "$PY" -m pip install pytest dist/*.whl
+          cd "$RUNNER_TEMP"
+          "$PY" -c "import nsh; print(nsh.__version__, nsh.__file__)"
+
+      - name: Run the tests against the installed wheel
+        continue-on-error: ${{ !matrix.required }}
+        run: |
+          "$PY" -m pytest -o pythonpath= -q tests
