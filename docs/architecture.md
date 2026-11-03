@@ -15,12 +15,14 @@ python/nsh/
   components/          Python-only styled components (button.py)            ← most contributions
   _element.py          Element, props(), merge_class()                       ┐
   _signals.py          signal(), Signal                                      │ core
+  _each.py             each(): keyed lists (a marker, not a kind)            │
   _runtime.py          run(), report_exception()                             │ (maintainers)
   testing.py           headless apps for tests                               ┘
 src/
   elements/            one file per kind (view.rs, text.rs); mod.rs has the KINDS table
   props.rs             props many kinds share (class_, on_press, role, test_id)
   tree.rs              walks children: elements, strings, lists, callables (regions)
+  each.rs              nsh.each as NSH's keyed `each` region
   bridge.rs            calling Python from the engine thread, error logging  ┐
   signal.rs            Trigger: the NSH signal behind each Python signal     │ core
   app.rs               run(): the window, the root component, Ctrl-C         │
@@ -143,3 +145,35 @@ Details:
   handlers. Nothing in Rust knows about them.
 - `effect` isn't there yet. It needs an NSH effect owned by the engine
   (Rust), with the same trigger approach.
+
+## Keyed lists: `nsh.each`
+
+`nsh.each(items, render, key=...)` binds NSH's `each` (flow.rs). A
+callable child re-makes every row on every change; `each` renders only
+new keys, keeps rows whose key stays (moving them on reorder, with their
+nodes, bindings and the signals `render` made) and disposes the rest.
+
+- **Not an element kind.** It has no node or props of its own: like a
+  callable child, it's a region of its parent's children. So it's a
+  marker object (`nsh._each.Each`) that `tree.rs` hands to `each.rs`, and
+  `KINDS`/`tests/test_kinds.py` don't list it.
+- **Keys.** NSH wants `K: Hash + Eq + Clone`. The Python key is computed
+  with the items in one GIL pass (the items binding), with its `hash()`;
+  equality is Python's `==` asked under the GIL (`Python::attach`, an
+  exception meaning "not equal"), so keys behave like dict keys. Python
+  objects sit behind an `Rc`, so NSH clones them without the GIL. A key
+  that raises (or isn't hashable) is logged and replaced by a unique key.
+- **Default key: the item itself** (strings, numbers, tuples), or its
+  identity when it's unhashable (dicts): no copy-and-compare surprises
+  for values, and records kept as the same objects still match. Records
+  that are rebuilt (`{**todo, "done": True}`) need `key=`.
+- **Items.** NSH gives each row its item as a signal, set when an item
+  under the same key changes (`is`, then `==`). The row's Python `render`
+  runs untracked inside a `dynamic` that reads only that signal: it runs
+  once per key, and again (in place) only if the item under the key was
+  replaced by one that isn't `==`. Signals read in `render` are read once,
+  as in a component.
+- **Errors.** `items`, `key` and `render` run through `bridge::call`. A
+  failed `items` keeps the rows shown (the last good list), so their state
+  survives an error that may pass.
+- The row's index isn't passed to Python yet.
