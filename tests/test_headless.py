@@ -263,10 +263,13 @@ def test_form_example():
     with open(Form) as app:
         app.type_text("id:name", "Ada")
         app.wait_for("Hello, Ada")
-        app.type_text("id:email", "ada@example.org\n")
+        app.type_text("id:email", "ada@example.org")
+        app.type_text("id:password", "s3cret")
+        app.type_text("id:email", "\n")
         app.wait_for("Welcome, Ada! We'll write to ada@example.org.")
         assert app.value("id:name") == ""
         assert app.value("id:email") == ""
+        assert app.value("id:password") == ""
         app.type_text("id:name", "Bo")
         app.press("id:send")  # no email: nothing is sent
         app.wait_for("Hello, Bo")
