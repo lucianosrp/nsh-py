@@ -111,6 +111,10 @@ class _Source(Generic[T]):
             dependent._mark_stale(stale)
         # Together: a binding that read a computed and its signal runs once.
         _core.notify_all([s._trigger for s in stale if s._trigger is not None])
+        for source in stale:
+            observer = getattr(source, "_observer", None)
+            if observer is not None:
+                observer()
 
 
 class Signal(_Source[T]):
@@ -229,7 +233,7 @@ class Computed(_Source[T]):
     `label.value`. It can't be set.
     """
 
-    __slots__ = ("_fn", "_value", "_sources", "_computing", "_dirty", "_name")
+    __slots__ = ("_fn", "_value", "_sources", "_computing", "_dirty", "_name", "_observer")
 
     def __init__(self, fn: Callable[[], T]) -> None:
         super().__init__()
@@ -239,6 +243,9 @@ class Computed(_Source[T]):
         self._computing = False
         self._dirty = True  # marked stale since the last compute attempt
         self._name = getattr(fn, "__name__", "computed")
+        # Called after a source changed and this was marked stale (the
+        # effects with no app, nsh/_effects.py).
+        self._observer: Callable[[], None] | None = None
 
     def __call__(self) -> T:
         """The value (computed now if a source changed), subscribing the running binding."""
@@ -257,7 +264,7 @@ class Computed(_Source[T]):
         self._dirty = False  # a change from now on must tell readers, even if this raises
         for source in self._sources:
             source._dependents.discard(self)
-        read: set[_Source[Any]] = set()
+        read = self._new_reads()
         stack = _collecting()
         stack.append(read)
         self._computing = True
@@ -270,6 +277,10 @@ class Computed(_Source[T]):
             for source in read:
                 source._dependents.add(self)
         self._value = value
+
+    def _new_reads(self) -> set[_Source[Any]]:
+        """Where a compute records the sources it reads."""
+        return set()
 
     def _mark_stale(self, stale: list[_Source[Any]]) -> None:
         if self._dirty:

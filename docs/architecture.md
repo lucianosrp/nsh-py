@@ -17,7 +17,7 @@ python/nsh/
   _signals.py          signal(), Signal                                      │ core
   _each.py             each(): keyed lists (a marker, not a kind)            │
   _runtime.py          run(), report_exception()                             │ (maintainers)
-  _engine.py           call_soon (and effects, timers: later)                │
+  _engine.py           call_soon, effect, set_timeout, set_interval          │
   testing.py           headless apps for tests                               ┘
 src/
   elements/            one file per kind (view.rs, text.rs); mod.rs has the KINDS table
@@ -27,6 +27,7 @@ src/
   bridge.rs            calling Python from the engine thread, error logging  ┐
   signal.rs            Trigger: the NSH signal behind each Python signal     │ core
   queue.rs             the engine-thread queue: call_soon, posting jobs      │
+  schedule.rs          Effect and Timer: NSH effects and timers for Python   │
   app.rs               run(): the window, the root component, Ctrl-C         │
   headless.rs          nsh-testing's driver for nsh.testing                  ┘
 tests/
@@ -193,8 +194,26 @@ Details:
   or a signal can go anywhere a binding goes, and `count.updater(fn)`,
   `count.mutator(fn)` and `count.setter(v)` just return zero-argument
   handlers. Nothing in Rust knows about them.
-- `effect` isn't there yet. It needs an NSH effect owned by the engine
-  (Rust), with the same trigger approach.
+- **`effect`** is an NSH effect made on the engine (`schedule.rs`
+  `Effect`): it runs a Python function now and again when the triggers it
+  read notify. The Python side reads signals as usual (`count()` subscribes
+  the running effect). It lives in an owner of its own (so `.dispose()`
+  works) that the current owner disposes with a cleanup: a component's effect
+  ends with the component, a handler's with its element, a posted one with
+  the app's root. Made on another thread, it's posted, so its first run
+  isn't immediate; `dispose()` from any thread is posted too (a disposal
+  before the creation ran wins). **With no app** (a plain script, or before
+  `nsh.run`) the effect is Python only (`_engine.py`): a computed that
+  records what it reads as it reads, and is run again by `_notify` after the
+  downstream computeds are marked stale, on the writing thread. It's kept
+  alive until disposed, and stopped with an error if it keeps changing what
+  it reads (100 runs). It isn't tied to a component, so an effect made
+  before `nsh.run` stays Python only for good.
+- **Timers** (`set_timeout`, `set_interval`) are NSH tasks that wait on the
+  executor's timers (`schedule.rs` `Timer`), owned like effects. The handle
+  only holds an atomic flag, so `cancel()` works from any thread without
+  the queue: the callback stops being called at once, and the task ends
+  when it next wakes. They need a running app (`RuntimeError` otherwise).
 
 ## Keyed lists: `nsh.each`
 

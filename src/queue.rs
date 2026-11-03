@@ -193,5 +193,6 @@ pub(crate) fn app_active() -> bool {
 
 pub(crate) fn register(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(call_soon, m)?)?;
-    m.add_function(wrap_pyfunction!(app_active, m)?)
+    m.add_function(wrap_pyfunction!(app_active, m)?)?;
+    crate::schedule::register(m)
 }

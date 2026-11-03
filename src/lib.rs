@@ -7,6 +7,7 @@ mod elements;
 mod headless;
 mod props;
 mod queue;
+mod schedule;
 mod signal;
 mod tree;
 

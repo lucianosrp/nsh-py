@@ -29,6 +29,23 @@ def call_soon(func: Callable[..., Any], args: tuple[Any, ...] = ()) -> None:
 def app_active() -> bool:
     """Whether an app is starting or running: posted jobs will run (src/queue.rs)."""
 
+class Effect:
+    """An NSH effect running a Python function (src/schedule.rs). Engine thread only."""
+
+    def __init__(self, func: Callable[[], Any]) -> None: ...
+    def dispose(self) -> None: ...
+
+class Timer:
+    """A timer, started with `arm()` on the engine thread (src/schedule.rs)."""
+
+    def __init__(
+        self, func: Callable[..., Any], args: tuple[Any, ...], seconds: float, repeat: bool
+    ) -> None: ...
+    def arm(self) -> None: ...
+    def cancel(self) -> None: ...
+    @property
+    def cancelled(self) -> bool: ...
+
 class Trigger:
     """The NSH signal behind a Python signal (src/signal.rs)."""
 

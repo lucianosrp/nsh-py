@@ -67,7 +67,7 @@ nsh.run(Counter, title="Counter")
 - The signal API follows reaktiv/Solid: `s()`, `.set()`, `.update()`, `computed`, `effect`.
 - **Pitfall 1:** a value read without a lambda is read once and isn't reactive. Warn or lint for it.
 - **Pitfall 2:** changing a list or dict in place doesn't notify subscribers. Provide reactive collections, or document the rule.
-- **Decided:** the value lives in Python; each signal holds an NSH `Signal<()>` trigger so NSH's graph tracks dependencies (`docs/architecture.md`). Done: `.value`, `@nsh.computed` (cached in Python), `.map`, handler decorators `@count.updater` / `@items.mutator` and `count.setter(v)`; lambdas still work everywhere. Also done: the engine-thread queue (`nsh.call_soon`, writes from worker threads): `docs/architecture.md`. Next: `effect`.
+- **Decided:** the value lives in Python; each signal holds an NSH `Signal<()>` trigger so NSH's graph tracks dependencies (`docs/architecture.md`). Done: `.value`, `@nsh.computed` (cached in Python), `.map`, handler decorators `@count.updater` / `@items.mutator` and `count.setter(v)`; lambdas still work everywhere. Also done: the engine-thread queue (`nsh.call_soon`, writes from worker threads), `@nsh.effect`, `nsh.set_timeout` / `nsh.set_interval`: `docs/architecture.md`.
 
 ## Roadmap
 1. ✅ Skeleton (maturin, PyO3, NSH pinned) and research briefs.
