@@ -21,6 +21,8 @@ use nsh_platform_windows as platform;
 pub(crate) enum RootKind {
     /// `nsh.run(None)`: the built-in Rust hello component.
     Hello,
+    /// A Python component: a callable returning elements, or elements.
+    Python(Py<PyAny>),
 }
 
 /// The root of the app being run. One app per process: `run_app` owns the
@@ -60,6 +62,36 @@ impl Component for AppRoot {
         let kind = ROOT.lock().unwrap_or_else(|e| e.into_inner()).take();
         match kind {
             Some(RootKind::Hello) | None => Hello::view((), cx).into_element(),
+            Some(RootKind::Python(root)) => python_root(root),
+        }
+    }
+}
+
+/// The window's content made by Python root `root`; an error message if
+/// it raised (the exception is logged).
+fn python_root(root: Py<PyAny>) -> AnyElement {
+    let made = crate::bridge::call(|py| {
+        let root = root.bind(py);
+        let tree = if root.is_callable() {
+            root.call0()?
+        } else {
+            root.clone()
+        };
+        crate::tree::children(py, &tree)
+    });
+    let page = view().app_class(Some(SharedString::from("flex-1 bg-background")));
+    match made {
+        Some(children) => page.child(children).into_element(),
+        None => {
+            page.app_class(Some(SharedString::from("flex-1 bg-background p-8 gap-2")))
+                .child(text("The app's root raised an exception").app_class(Some(
+                    SharedString::from("text-xl font-bold text-destructive"),
+                )))
+                .child(
+                    text("See the log for the traceback.")
+                        .app_class(Some(SharedString::from("text-muted-foreground"))),
+                )
+                .into_element()
         }
     }
 }
@@ -77,11 +109,7 @@ pub(crate) fn run(
 ) -> PyResult<()> {
     let kind = match root {
         None => RootKind::Hello,
-        Some(_) => {
-            return Err(pyo3::exceptions::PyNotImplementedError::new_err(
-                "Python roots are not supported yet",
-            ));
-        }
+        Some(root) => RootKind::Python(root),
     };
     *ROOT.lock().unwrap_or_else(|e| e.into_inner()) = Some(kind);
 
