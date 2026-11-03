@@ -176,3 +176,15 @@ def test_decorators_and_computed_in_the_engine():
         app.press("reset")
         app.wait_for("n=0")
         assert app.shows("even")
+
+
+def test_failing_computed_recovers_when_its_source_changes(caplog):
+    def App():
+        n = nsh.signal(0)
+        inverse = nsh.computed(lambda: f"inverse={1 / n()}")
+        return nsh.view(nsh.text(inverse), nsh.button("one", on_press=n.setter(1)))
+
+    with caplog.at_level(logging.ERROR, logger="nsh"), open(App) as app:
+        assert "ZeroDivisionError" in caplog.text
+        app.press("one")
+        app.wait_for("inverse=1.0")

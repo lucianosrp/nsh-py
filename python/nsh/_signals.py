@@ -210,7 +210,7 @@ class Computed(_Source[T]):
     `label.value`. It can't be set.
     """
 
-    __slots__ = ("_fn", "_value", "_sources", "_computing", "_name")
+    __slots__ = ("_fn", "_value", "_sources", "_computing", "_dirty", "_name")
 
     def __init__(self, fn: Callable[[], T]) -> None:
         super().__init__()
@@ -218,6 +218,7 @@ class Computed(_Source[T]):
         self._value: Any = _STALE
         self._sources: set[_Source[Any]] = set()
         self._computing = False
+        self._dirty = True  # marked stale since the last compute attempt
         self._name = getattr(fn, "__name__", "computed")
 
     def __call__(self) -> T:
@@ -234,6 +235,7 @@ class Computed(_Source[T]):
     def _compute(self) -> None:
         if self._computing:
             raise RuntimeError(f"computed {self._name!r} reads itself")
+        self._dirty = False  # a change from now on must tell readers, even if this raises
         for source in self._sources:
             source._dependents.discard(self)
         read: set[_Source[Any]] = set()
@@ -251,8 +253,9 @@ class Computed(_Source[T]):
         self._value = value
 
     def _mark_stale(self, stale: list[_Source[Any]]) -> None:
-        if self._value is _STALE:
+        if self._dirty:
             return  # already stale: its readers were told
+        self._dirty = True
         self._value = _STALE
         stale.append(self)
         for dependent in list(self._dependents):
