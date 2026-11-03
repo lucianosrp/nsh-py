@@ -4,25 +4,48 @@ nsh-py binds NSH's public Rust app API through PyO3 ("Path B" in
 `CLAUDE.md`; the full reasoning is in `docs/research/nsh-2026-11-03.md`).
 This page covers how the pieces fit and the decisions behind them.
 
-## Layers
+## Layers and where code goes
+
+**The rule: behaviour goes in Rust, look and composition go in Python.**
 
 ```
-python/nsh/            pure Python: the API users see
-  _elements.py         Element, view(), text(), button()  (plain objects)
-  _signals.py          signal(), Signal
-  _runtime.py          run(), report_exception()
-src/                   Rust (the _core extension module)
-  app.rs               run(): the window, the root component, Ctrl-C
-  tree.rs              Python Element trees -> NSH elements
-  bridge.rs            calling Python from the engine thread, error logging
-  signal.rs            Trigger: the NSH signal behind each Python signal
+python/nsh/
+  __init__.py          public API: re-exports only
+  primitives/          one module per Rust element kind (view.py, text.py) ← pairs with src/elements/
+  components/          Python-only styled components (button.py)            ← most contributions
+  _element.py          Element, props(), merge_class()                       ┐
+  _signals.py          signal(), Signal                                      │ core
+  _runtime.py          run(), report_exception()                             │ (maintainers)
+  testing.py           headless apps for tests                               ┘
+src/
+  elements/            one file per kind (view.rs, text.rs); mod.rs has the KINDS table
+  props.rs             props many kinds share (class_, on_press, role, test_id)
+  tree.rs              walks children: elements, strings, lists, callables (regions)
+  bridge.rs            calling Python from the engine thread, error logging  ┐
+  signal.rs            Trigger: the NSH signal behind each Python signal     │ core
+  app.rs               run(): the window, the root component, Ctrl-C         │
+  headless.rs          nsh-testing's driver for nsh.testing                  ┘
+tests/
+  primitives/, components/   one test file per primitive / component (headless)
+  test_kinds.py              Python primitives == Rust kinds
 ```
+
+| Change | Where | Rust? |
+|---|---|---|
+| A styled component built from primitives | `components/<name>.py` | no |
+| A new prop on a primitive | `src/props.rs` or `src/elements/<kind>.rs`, plus the Python function | a little |
+| A new primitive or an nsh-base component with behaviour (input, dialog) | `src/elements/<kind>.rs` + `KINDS`, plus `primitives/<kind>.py` | yes |
+| Signals, threads, runtime | core | maintainers |
 
 Elements are **plain Python objects** (`kind`, `props`, `children`), not Rust
-objects. Most sprint work (styled components, new props, docs) is therefore
-Python only, and a future Streamlit-style layer can build the same objects.
-`tree.rs` turns them into NSH elements when the app runs, on the engine
-thread.
+objects. The `kind` string and the `props` dict are the whole contract
+between the layers: `src/elements/<kind>.rs` reads the props its Python
+function writes. `tests/test_kinds.py` fails if the two lists of kinds
+drift apart. A future Streamlit-style layer builds the same objects.
+
+Core rules for Rust code: call Python only through `bridge::call` (it
+logs exceptions); touch NSH only on the engine thread; never hold the GIL
+while waiting on the engine (`py.detach`).
 
 ## Threads
 
