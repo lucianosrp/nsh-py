@@ -22,3 +22,13 @@ features = []
 
 [dependency-groups]
 dev = ["maturin>=1.16,<2", "pytest>=8"]
+
+[tool.uv]
+# Rebuild the extension when the Rust side changes, not only pyproject.toml.
+cache-keys = [
+    { file = "pyproject.toml" },
+    { file = "Cargo.toml" },
+    { file = "Cargo.lock" },
+    { file = "rust-toolchain.toml" },
+    { file = "src/**/*.rs" },
+]
