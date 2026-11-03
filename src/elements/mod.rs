@@ -11,6 +11,7 @@ use pyo3::{prelude::*, types::PyDict};
 mod checkbox;
 mod input;
 mod scroll;
+mod switch;
 mod text;
 mod view;
 
@@ -23,6 +24,7 @@ const KINDS: &[(&str, Build)] = &[
     ("checkbox", checkbox::build),
     ("input", input::build),
     ("scroll", scroll::build),
+    ("switch", switch::build),
     ("text", text::build),
     ("view", view::build),
 ];
