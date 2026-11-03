@@ -70,3 +70,61 @@ pub(crate) fn boolean(obj: &Bound<'_, PyAny>) -> PyResult<Reactive<bool>> {
         Ok(Reactive::Static(obj.is_truthy()?))
     }
 }
+
+/// An optional string prop (the classes of a component's part): `None`
+/// when unset.
+pub(crate) fn optional_string(
+    props: &Bound<'_, PyDict>,
+    name: &str,
+) -> PyResult<Reactive<Option<SharedString>>> {
+    Ok(match get(props, name)? {
+        Some(value) => string(&value)?.map(Some),
+        None => Reactive::Static(None),
+    })
+}
+
+/// An nsh-base component with `class_`: in a view that takes the classes,
+/// when set.
+///
+/// NSH 0.3.0 drops `app_class` on a component element (only typed styles
+/// and inline styles reach the component's root), so the classes go on a
+/// view around it: sizes, margins and the like work; the root's own layout
+/// is the builder's (typed styles), and its parts' look comes in props
+/// (`indicator_class`, `track_class`, ...). See [`test_probe`] for
+/// `test_id`.
+pub(crate) fn with_class(el: impl IntoElement, props: &Bound<'_, PyDict>) -> PyResult<AnyElement> {
+    Ok(match get(props, "class_")? {
+        Some(class) => view()
+            .app_class(string(&class)?.map(Some))
+            .child(el)
+            .into_element(),
+        None => el.into_element(),
+    })
+}
+
+/// The child that carries `test_id` for an nsh-base component, if set.
+///
+/// A component's root can't take a test id (that's [`Interactive`]'s), so
+/// this is an empty view over the whole component (`absolute inset-0`)
+/// that lets touches through: `id:` selectors find it, and a press on it
+/// goes to the nearest view around it that hears presses, the component's
+/// root. Put it among the component's children.
+pub(crate) fn test_probe(props: &Bound<'_, PyDict>) -> PyResult<Option<AnyElement>> {
+    let Some(id) = get(props, "test_id")? else {
+        return Ok(None);
+    };
+    let probe = view()
+        .app_class(Some(SharedString::from("absolute inset-0")))
+        .pointer_events(PointerEvents::None)
+        .test_id(&id.extract::<String>()?);
+    Ok(Some(probe.into_element()))
+}
+
+/// A listener calling the Python `handler` with a bool (the value a
+/// checkbox or switch press asks for). It must be `'static` but not
+/// `Send`, so it can hold the `Py<PyAny>`.
+pub(crate) fn with_bool(handler: Py<PyAny>) -> impl Fn(&bool) + 'static {
+    move |value: &bool| {
+        bridge::call(|py| handler.call1(py, (*value,)).map(drop));
+    }
+}
