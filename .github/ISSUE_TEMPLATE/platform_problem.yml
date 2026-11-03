@@ -1,0 +1,31 @@
+name: Platform problem
+description: It doesn't build or run on macOS, Windows or Linux.
+labels: ["platform"]
+body:
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      options: [macOS, Windows, Linux]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: OS version, Python version, how you installed
+      placeholder: Windows 11, Python 3.13, uv run
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `uv run python tools/doctor.py`
+      render: text
+  - type: textarea
+    id: what
+    attributes:
+      label: What fails?
+      description: The command you ran and the full output.
+      render: text
+    validations:
+      required: true

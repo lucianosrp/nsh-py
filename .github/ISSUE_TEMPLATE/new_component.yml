@@ -1,0 +1,26 @@
+name: New component (Python only)
+description: A styled component made from existing primitives, like card or badge.
+labels: ["python-only", "good-first-issue"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Name
+      description: A snake_case name, like `badge` or `alert`.
+    validations:
+      required: true
+  - type: textarea
+    id: look
+    attributes:
+      label: What it looks like and how you'd call it
+      description: A sketch, a link to a shadcn/ui page, or a few lines of Python.
+      render: python
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: |
+        Start with `uv run --no-project python tools/new.py component <name>`.
+        See CONTRIBUTING.md, "Walkthrough A".

@@ -1,0 +1,31 @@
+name: Bug report
+description: Something doesn't work as documented.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, what you got.
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: Smallest code that shows it
+      render: python
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: OS and Python version
+      placeholder: macOS 14, Python 3.12
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Error output
+      description: Paste the full traceback, if there is one.
+      render: text

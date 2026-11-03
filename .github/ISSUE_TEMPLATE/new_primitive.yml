@@ -1,0 +1,30 @@
+name: New primitive (Python + Rust)
+description: A new element kind that needs Rust, like image or checkbox.
+labels: ["python+rust"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Name
+      description: A snake_case name, like `image` or `checkbox`.
+    validations:
+      required: true
+  - type: textarea
+    id: api
+    attributes:
+      label: The Python API you'd like
+      render: python
+    validations:
+      required: true
+  - type: input
+    id: nsh
+    attributes:
+      label: The NSH builder it wraps
+      description: The function or type in nsh-core 0.3.0, if you know it.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: |
+        Start with `uv run python tools/new.py primitive <name>`.
+        See CONTRIBUTING.md, "Walkthrough B".
