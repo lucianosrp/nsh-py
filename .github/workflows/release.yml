@@ -75,7 +75,7 @@ jobs:
           Experimental: wheels are distributed through GitHub Releases only.
 
           \`\`\`sh
-          uv pip install nsh-py --find-links https://github.com/${GITHUB_REPOSITORY}/releases/expanded_assets/${GITHUB_REF_NAME}
+          uv pip install nsh-py --no-index --find-links https://github.com/${GITHUB_REPOSITORY}/releases/expanded_assets/${GITHUB_REF_NAME}
           \`\`\`
 
           Linux wheels need the system GTK 4.14+ (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch).
@@ -90,7 +90,7 @@ jobs:
           Use it as a fixed find-links URL:
 
           \`\`\`sh
-          uv pip install nsh-py --find-links https://github.com/${GITHUB_REPOSITORY}/releases/expanded_assets/latest
+          uv pip install nsh-py --no-index --find-links https://github.com/${GITHUB_REPOSITORY}/releases/expanded_assets/latest
           \`\`\`
           NOTES
           .github/scripts/rolling-release.sh latest "Latest release (${GITHUB_REF_NAME})" latest-notes.md dist/*

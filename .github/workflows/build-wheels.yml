@@ -124,12 +124,11 @@ jobs:
         include:
           - { key: linux-x86_64, os: ubuntu-24.04, python: "3.14", required: true }
           - { key: linux-x86_64, os: ubuntu-24.04, python: "3.10", required: true }
-          # macOS and Windows are not verified yet (AGENTS.md roadmap):
-          # `import nsh` must work, but a failing test run only warns until
-          # the platform track has made the suite pass there.
-          - { key: macos-arm64, os: macos-latest, python: "3.14", required: false }
-          - { key: macos-x86_64, os: macos-15-intel, python: "3.14", required: false }
-          - { key: windows-x86_64, os: windows-latest, python: "3.14", required: false }
+          # The headless suite passes on macOS and Windows too (PR #2), so a
+          # failure there blocks like on Linux.
+          - { key: macos-arm64, os: macos-latest, python: "3.14", required: true }
+          - { key: macos-x86_64, os: macos-15-intel, python: "3.14", required: true }
+          - { key: windows-x86_64, os: windows-latest, python: "3.14", required: true }
     defaults:
       run:
         shell: bash

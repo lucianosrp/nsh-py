@@ -23,17 +23,28 @@ published on [GitHub Releases](https://github.com/lucianosrp/nsh-py/releases),
 and you install them with [uv](https://docs.astral.sh/uv/) pointed at a release:
 
 ```sh
-uv pip install nsh-py \
+uv pip install nsh-py --no-index \
   --find-links https://github.com/lucianosrp/nsh-py/releases/expanded_assets/latest
 ```
 
-`latest` is a rolling tag that always holds the newest release. To pin one,
-use its tag instead (`.../expanded_assets/v0.1.0`). In a uv project, add the
-URL once to `pyproject.toml`, then `uv add nsh-py`:
+`--no-index` keeps uv off PyPI: nsh-py has no dependencies, and the name
+`nsh-py` isn't ours on PyPI, so a package uploaded there under that name must
+never win. `latest` is a rolling tag that always holds the newest release; to
+pin one, use its tag instead (`.../expanded_assets/v0.1.0`).
+
+In a uv project, declare the release as an *explicit* index and pin nsh-py to
+it, so uv takes nsh-py from GitHub only (your other dependencies still come
+from PyPI), then `uv add nsh-py`:
 
 ```toml
-[tool.uv]
-find-links = ["https://github.com/lucianosrp/nsh-py/releases/expanded_assets/latest"]
+[[tool.uv.index]]
+name = "nsh-py"
+url = "https://github.com/lucianosrp/nsh-py/releases/expanded_assets/latest"
+format = "flat"
+explicit = true
+
+[tool.uv.sources]
+nsh-py = { index = "nsh-py" }
 ```
 
 For the newest build of `main` (not a release), use the tag `dev-core`.

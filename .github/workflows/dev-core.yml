@@ -69,7 +69,7 @@ jobs:
           Bleeding-edge install:
 
           \`\`\`sh
-          uv pip install nsh-py --find-links https://github.com/${GITHUB_REPOSITORY}/releases/expanded_assets/dev-core
+          uv pip install nsh-py --no-index --find-links https://github.com/${GITHUB_REPOSITORY}/releases/expanded_assets/dev-core
           \`\`\`
           NOTES
           .github/scripts/rolling-release.sh dev-core "dev-core (${GITHUB_SHA::7})" notes.md out/*
