@@ -129,6 +129,17 @@ Details:
 - **Writes from other threads** (a Python worker thread) can't notify yet:
   the value changes, the UI doesn't, and a warning is logged. The fix is to
   post the write to the engine thread. That's a next step.
-- `computed` and `effect` aren't there yet. A plain lambda already acts as
-  an uncached computed. Cached ones map onto NSH `computed`/`effect` with
-  the same trigger approach.
+- **`computed`** caches in Python. While it computes, it records the
+  signals it reads (a thread-local stack), and they hold it in a
+  `WeakSet`. A write marks every computed downstream stale, then notifies
+  their triggers along with the signal's own, so NSH re-runs the bindings
+  that read them. A stale computed recomputes on its next read (lazy, so
+  no half-updated values). This is a small Python graph for caching only;
+  which bindings re-run is still NSH's call. A plain lambda remains an
+  uncached computed.
+- **Styles are interchangeable:** a lambda, a named function, a computed
+  or a signal can go anywhere a binding goes, and `count.updater(fn)`,
+  `count.mutator(fn)` and `count.setter(v)` just return zero-argument
+  handlers. Nothing in Rust knows about them.
+- `effect` isn't there yet. It needs an NSH effect owned by the engine
+  (Rust), with the same trigger approach.

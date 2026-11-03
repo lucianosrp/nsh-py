@@ -16,6 +16,32 @@ def Counter():
 nsh.run(Counter, title="Counter")
 ```
 
+Prefer named functions to lambdas? Decorators do the same job, and you can
+mix both styles freely:
+
+```python
+def Counter():
+    count = nsh.signal(0)
+
+    @nsh.computed              # cached: recomputed only when count changes
+    def label():
+        return f"Count: {count()}"
+
+    @count.updater             # a handler for on_press
+    def increment(n):
+        return n + 1
+
+    return nsh.view(
+        nsh.text(label),
+        nsh.button("+1", on_press=increment),
+        nsh.button("Reset", on_press=count.setter(0)),
+    )
+```
+
+`count.value` reads and writes too (`count.value += 1` in a handler), and
+`count.map(fn)` is a one-line computed. Full example:
+[`examples/counter_decorators.py`](examples/counter_decorators.py).
+
 ## Install (experimental)
 
 nsh-py is not on PyPI. Prebuilt wheels (one per platform, Python 3.10+) are
