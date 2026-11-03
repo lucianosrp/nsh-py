@@ -35,6 +35,19 @@ def test_counter_example():
         assert "negative" in app.texts()
 
 
+def test_counter_decorators_example():
+    Counter = load_example("counter_decorators")["Counter"]
+    with open(Counter) as app:
+        app.press("id:inc")
+        app.press("id:inc")
+        app.wait_for("Count: 2")
+        app.press("id:reset")
+        app.wait_for("Count: 0")
+        app.press("id:dec")
+        app.wait_for("Count: -1")
+        assert app.shows("negative")
+
+
 def test_bindings_update_independently():
     renders = []
 
