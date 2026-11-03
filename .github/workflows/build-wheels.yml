@@ -113,8 +113,8 @@ jobs:
 
   smoke:
     # Install each built wheel in a fresh venv and run the headless tests
-    # against the *installed* package (-o pythonpath= drops the repo's
-    # python/ dir from the path, which pyproject.toml adds for pytest).
+    # against the *installed* package: the checkout has no compiled core,
+    # so tests/conftest.py leaves python/ off the path.
     name: Smoke test (${{ matrix.key }}, py${{ matrix.python }})
     needs: wheels
     runs-on: ${{ matrix.os }}
@@ -163,4 +163,4 @@ jobs:
       - name: Run the tests against the installed wheel
         continue-on-error: ${{ !matrix.required }}
         run: |
-          "$PY" -m pytest -o pythonpath= -q tests
+          "$PY" -m pytest -q tests
