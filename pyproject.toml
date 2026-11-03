@@ -31,7 +31,11 @@ module-name = "nsh._core"
 features = []
 
 [dependency-groups]
-dev = ["maturin>=1.16,<2", "pytest>=8"]
+dev = [
+    "maturin>=1.16,<2",
+    "pandas>=2.3.3",
+    "pytest>=8",
+]
 
 [tool.uv]
 # uv run / uv sync build a dev (debug, incremental) extension: ~1-5 s per
