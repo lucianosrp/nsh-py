@@ -92,7 +92,9 @@ without a reason: a fetched core in `python/nsh/` is overwritten by `uv run`'s b
 
 1. Pick an issue with your track's label and comment that you're on it.
 2. Branch: `git switch -c <short-topic>`.
-3. Make the change in the right place:
+3. Make the change in the right place. To start from a template, run
+   `uv run --no-project python tools/new.py component <name>` (or
+   `... primitive <name>`): it writes the files below and adds the exports.
    - **Component (Python only):** `python/nsh/components/<name>.py`, export it in
      `components/__init__.py` and `nsh/__init__.py`, and test it in
      `tests/components/test_<name>.py`.
@@ -103,6 +105,7 @@ without a reason: a fetched core in `python/nsh/` is overwritten by `uv run`'s b
    ```sh
    uv run pytest -q tests                  # headless: no window needed
    uv run python examples/<example>.py     # look at it for real
+   uvx ruff@0.15.12 check --fix . && uvx ruff@0.15.12 format .   # Python lint + format
    cargo fmt && cargo clippy -- -D warnings  # if you touched Rust
    ```
 5. Open a PR with a screenshot if it changes what you see.
@@ -124,6 +127,7 @@ def test_card_shows_title():
 ## PR checklist
 
 - [ ] `uv run pytest -q tests` passes.
+- [ ] `ruff check` and `ruff format --check` pass (CI runs them).
 - [ ] New components or primitives have a test, and a docstring with an example.
 - [ ] Public names are exported from `nsh/__init__.py`.
 - [ ] Rust changes pass `cargo fmt` and `cargo clippy -- -D warnings`.

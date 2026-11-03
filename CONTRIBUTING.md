@@ -24,8 +24,14 @@ The commands you'll use (the same on macOS, Windows and Linux):
 ```sh
 uv run pytest -q tests                    # headless: no window needed
 uv run python examples/counter.py         # open a window
+uvx ruff@0.15.12 check --fix . && uvx ruff@0.15.12 format .   # lint and format the Python
 cargo fmt && cargo clippy -- -D warnings  # only if you touched Rust
+uv run --no-project python tools/new.py component badge   # start a new component
 ```
+
+CI runs the same two `ruff` commands (without `--fix`), so run them before
+you push. Optional: `.pre-commit-config.yaml` runs them (and `cargo fmt`)
+on every commit: `uv tool install pre-commit && pre-commit install`.
 
 `uv run` builds the Rust extension by itself the first time (a few
 minutes), and again whenever `src/**/*.rs`, `Cargo.*` or `pyproject.toml`
@@ -39,6 +45,11 @@ run `uv run --no-project --with pytest pytest -q tests` and
 (Setup) has the details and says when the core is out of date.
 
 ## Walkthrough A: add a component (Python only)
+
+**Quick start:** `uv run --no-project python tools/new.py component badge`
+writes `python/nsh/components/badge.py` and `tests/components/test_badge.py`,
+and adds the exports (steps 1 to 3 below). It never overwrites a file. Then
+fill in the TODOs. The steps below show what it writes.
 
 We'll add `card`, a bordered surface with an optional title and
 description. The finished code is in the repo (`python/nsh/components/card.py`,
@@ -109,7 +120,7 @@ What to notice:
 
 ### 2. Export it
 
-In `python/nsh/components/__init__.py`, add
+(`tools/new.py` does this for you.) In `python/nsh/components/__init__.py`, add
 `from nsh.components.card import card` and `"card"` to `__all__`. In
 `python/nsh/__init__.py`, change the import to
 `from nsh.components import button, card` and add `"card"` to `__all__`
@@ -164,6 +175,12 @@ uv run python examples/card.py
 Then open a PR with a screenshot (SPRINT.md has the checklist).
 
 ## Walkthrough B: add a primitive (Python + Rust)
+
+**Quick start:** `uv run python tools/new.py primitive image` writes
+`src/elements/image.rs`, `python/nsh/primitives/image.py` and
+`tests/primitives/test_image.py`, and registers the kind (steps 2 and 4
+below). The Rust builds a plain `view` for now: replace it with the NSH
+builder you want to wrap (step 1). It never overwrites a file.
 
 A primitive is a new element kind. We'll use `input`, a text field. The
 finished code is in the repo (`src/elements/input.rs`,

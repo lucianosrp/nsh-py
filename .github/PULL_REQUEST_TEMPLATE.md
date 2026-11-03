@@ -9,6 +9,7 @@
 ## Checklist
 
 - [ ] `uv run pytest -q tests` passes.
+- [ ] `ruff check` and `ruff format --check` pass (CI runs them).
 - [ ] New components or primitives have a test, and a docstring with an example.
 - [ ] Public names are exported from `nsh/__init__.py`.
 - [ ] Rust changes pass `cargo fmt` and `cargo clippy -- -D warnings`.
