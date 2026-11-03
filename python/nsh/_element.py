@@ -30,6 +30,9 @@ StrProp = str | Callable[[], Any]
 BoolProp = Union[bool, Callable[[], Any]]
 """A bool, or a callable returning one (a binding)."""
 
+NumProp = Union[int, float, Callable[[], Any]]
+"""A number, or a callable returning one (a binding)."""
+
 Handler = Callable[[], Any]
 """An event handler. Exceptions it raises are logged; the app keeps running."""
 

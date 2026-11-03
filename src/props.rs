@@ -71,6 +71,26 @@ pub(crate) fn boolean(obj: &Bound<'_, PyAny>) -> PyResult<Reactive<bool>> {
     }
 }
 
+/// A number prop: fixed, or bound to a callable (its result as a float).
+/// A callable that raises (logged) or returns `None` is `0.0`.
+pub(crate) fn number(obj: &Bound<'_, PyAny>) -> PyResult<Reactive<f32>> {
+    fn of(value: &Bound<'_, PyAny>) -> PyResult<f32> {
+        if value.is_none() {
+            Ok(0.0)
+        } else {
+            value.extract::<f32>()
+        }
+    }
+    if obj.is_callable() {
+        let f = obj.clone().unbind();
+        Ok(Reactive::Bound(Rc::new(move || {
+            bridge::call(|py| of(&f.bind(py).call0()?)).unwrap_or_default()
+        })))
+    } else {
+        Ok(Reactive::Static(of(obj)?))
+    }
+}
+
 /// An optional string prop (the classes of a component's part): `None`
 /// when unset.
 pub(crate) fn optional_string(

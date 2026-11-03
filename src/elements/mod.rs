@@ -10,6 +10,7 @@ use pyo3::{prelude::*, types::PyDict};
 
 mod checkbox;
 mod input;
+mod progress;
 mod scroll;
 mod switch;
 mod text;
@@ -23,6 +24,7 @@ pub(crate) type Build =
 const KINDS: &[(&str, Build)] = &[
     ("checkbox", checkbox::build),
     ("input", input::build),
+    ("progress", progress::build),
     ("scroll", scroll::build),
     ("switch", switch::build),
     ("text", text::build),
