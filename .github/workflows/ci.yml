@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+  # Keep in sync with rust-toolchain.toml (the pin is bumped deliberately).
+  RUST_TOOLCHAIN: "1.99.1"
+
+jobs:
+  lint:
+    name: Lint (fmt + clippy)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config clang libclang-dev libgtk-4-dev
+
+      - name: Install Rust ${{ env.RUST_TOOLCHAIN }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: lint
+
+      - name: cargo fmt --check
+        run: cargo fmt --check
+
+      - name: cargo clippy
+        run: cargo clippy -- -D warnings
+
+  build:
+    name: Build + import (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            python-version: "3.10"
+            artifact: linux
+          - os: ubuntu-24.04
+            python-version: "3.13"
+            artifact: linux-py313
+          - os: macos-latest
+            python-version: "3.10"
+            artifact: macos
+          - os: windows-latest
+            python-version: "3.10"
+            artifact: windows
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config clang libclang-dev libgtk-4-dev
+
+      - name: Locate libclang (Windows)
+        if: runner.os == 'Windows'
+        # LLVM is preinstalled on windows-latest; bindgen needs LIBCLANG_PATH.
+        run: |
+          echo "LIBCLANG_PATH=C:\\Program Files\\LLVM\\bin" >> "$GITHUB_ENV"
+          ls "/c/Program Files/LLVM/bin" | grep -i libclang || echo "::warning::libclang.dll not found in the default LLVM dir"
+
+      - name: Install Rust ${{ env.RUST_TOOLCHAIN }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.artifact }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Build wheel
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "maturin>=1.16,<2" pytest
+          maturin build --release -o dist
+
+      - name: Install wheel and import
+        run: |
+          python -m pip install --no-index --find-links dist nsh-py
+          cd "$RUNNER_TEMP"
+          python -c "import nsh; print(nsh.__version__)"
+
+      # Headless (nsh-testing): no display, no xvfb.
+      - name: Run tests (Linux)
+        if: runner.os == 'Linux'
+        run: python -m pytest -q tests
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.artifact }}
+          path: dist/*.whl
+          if-no-files-found: error
