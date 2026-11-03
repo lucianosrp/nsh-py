@@ -188,3 +188,20 @@ def test_failing_computed_recovers_when_its_source_changes(caplog):
         assert "ZeroDivisionError" in caplog.text
         app.press("one")
         app.wait_for("inverse=1.0")
+
+
+def test_dataframe_example():
+    pytest.importorskip("pandas")
+    App = load_example("dataframe")["App"]
+
+    def summary(app):
+        return next(t for t in app.texts() if t.endswith(tuple("0123456789")) and "sales," in t)
+
+    with open(App) as app:
+        assert summary(app).startswith("8 sales,")
+        app.press("Add a sale")
+        app.press("Sort by units")  # handlers run in order, so this sees 9 rows
+        assert summary(app).startswith("9 sales,")
+        texts = app.texts()
+        units = [int(texts[i + 2]) for i, t in enumerate(texts) if t in {"North", "South", "East", "West"}]
+        assert units == sorted(units, reverse=True) and len(units) == 9

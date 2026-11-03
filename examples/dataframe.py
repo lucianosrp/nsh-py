@@ -29,25 +29,29 @@ def with_revenue(df: pd.DataFrame) -> pd.DataFrame:
 def App():
     sales = nsh.signal(with_revenue(pd.DataFrame([new_sale() for _ in range(8)])))
 
-    def sort_by(column):
-        sales.update(lambda df: df.sort_values(column, ascending=False).reset_index(drop=True))
+    @nsh.computed
+    def summary():
+        df = sales()
+        return f"{len(df)} sales, {df['units'].sum()} units, revenue ${df['revenue'].sum():,.2f}"
 
-    def add_row():
-        sales.update(lambda df: with_revenue(pd.concat([df, pd.DataFrame([new_sale()])], ignore_index=True)))
+    @sales.updater
+    def add_sale(df):
+        return with_revenue(pd.concat([df, pd.DataFrame([new_sale()])], ignore_index=True))
+
+    def sort_by(column):
+        @sales.updater
+        def sort(df):
+            return df.sort_values(column, ascending=False).reset_index(drop=True)
+
+        return sort
 
     return nsh.view(
         nsh.text("Sales", class_="text-xl font-semibold text-foreground"),
-        nsh.text(
-            lambda: (
-                f"{len(sales())} sales, {sales()['units'].sum()} units, "
-                f"revenue ${sales()['revenue'].sum():,.2f}"
-            ),
-            class_="text-muted-foreground",
-        ),
+        nsh.text(summary, class_="text-muted-foreground"),
         nsh.view(
-            nsh.button("Sort by revenue", on_press=lambda: sort_by("revenue")),
-            nsh.button("Sort by units", on_press=lambda: sort_by("units")),
-            nsh.button("Add a sale", on_press=add_row),
+            nsh.button("Sort by revenue", on_press=sort_by("revenue")),
+            nsh.button("Sort by units", on_press=sort_by("units")),
+            nsh.button("Add a sale", on_press=add_sale),
             class_="flex-row gap-2",
         ),
         # `sales` is a signal, so the table is made again when it changes.
