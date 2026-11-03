@@ -40,7 +40,7 @@ uv venv && uv pip install maturin pytest
 source .venv/bin/activate && maturin develop      # about 65 s cold on Linux
 python -c "import nsh; print(nsh.__version__)"
 ```
-Or just `uv run python examples/counter.py` / `uv run pytest`: uv builds the extension itself and rebuilds when `src/**/*.rs`, `Cargo.*` or `pyproject.toml` change (`[tool.uv] cache-keys`). Its builds are release builds (~65 s each), so for tight Rust loops `maturin develop` (debug, incremental) is faster.
+Or just `uv run python examples/counter.py` / `uv run pytest`: uv builds the extension itself and rebuilds when `src/**/*.rs`, `Cargo.*` or `pyproject.toml` change (`[tool.uv] cache-keys`). It builds the dev profile (`[tool.uv] config-settings`), so a Rust edit costs ~1-3 s; release (LTO) takes ~23 s incremental and is only for wheels (`maturin build --release`). Dev builds keep line tables only (deps none): the .so is ~110 MB instead of ~790 MB.
 Linux needs GTK 4.14+ and glibc 2.39 or newer (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch), plus clang/libclang. Ubuntu 22.04 and Debian 12 are too old.
 
 ## Python API direction (draft)

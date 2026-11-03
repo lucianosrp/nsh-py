@@ -24,6 +24,10 @@ features = []
 dev = ["maturin>=1.16,<2", "pytest>=8"]
 
 [tool.uv]
+# uv run / uv sync build a dev (debug, incremental) extension: ~1-5 s per
+# Rust change instead of ~23 s for release. Wheels for users are built by
+# `maturin build --release` (CI), which this does not affect.
+config-settings = { build-args = "--profile=dev" }
 # Rebuild the extension when the Rust side changes, not only pyproject.toml.
 cache-keys = [
     { file = "pyproject.toml" },

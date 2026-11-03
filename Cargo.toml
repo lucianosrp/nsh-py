@@ -31,3 +31,11 @@ nsh-platform-windows = { version = "=0.3.0", default-features = false }
 [profile.release]
 strip = "symbols"
 lto = "thin"
+
+# Dev builds: line tables only (backtraces keep file:line) and none for
+# dependencies, so the .so stays small and links fast.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
