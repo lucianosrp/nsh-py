@@ -36,3 +36,11 @@ cache-keys = [
     { file = "rust-toolchain.toml" },
     { file = "src/**/*.rs" },
 ]
+
+[tool.pytest.ini_options]
+# Lets `pytest` import `nsh` straight from the checkout. That is how the
+# Python-only flow works with a prebuilt core (tools/fetch_core.py, no
+# Rust); with the project installed (`uv run pytest`) the same code is
+# imported, so nothing changes there.
+pythonpath = ["python"]
+testpaths = ["tests"]
