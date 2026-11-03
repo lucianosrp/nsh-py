@@ -19,21 +19,21 @@ def Form():
             email.set("")
 
     return nsh.view(
-        nsh.text("Sign up", class_="text-xl font-semibold"),
+        nsh.text("Sign up", class_="text-xl font-semibold text-foreground"),
         nsh.input(
             name,
             placeholder="Your name",
-            class_="border rounded-md px-3 py-2",
+            class_="border border-border rounded-md px-3 py-2 text-foreground",
             test_id="name",
         ),
         nsh.input(
             email,
             placeholder="Email",
             on_submit=lambda _: send(),  # Enter in the field
-            class_="border rounded-md px-3 py-2",
+            class_="border border-border rounded-md px-3 py-2 text-foreground",
             test_id="email",
         ),
-        nsh.text(lambda: f"Hello, {name() or 'stranger'}", class_="text-sm"),
+        nsh.text(lambda: f"Hello, {name() or 'stranger'}", class_="text-sm text-foreground"),
         nsh.button("Send", on_press=send, test_id="send"),
         nsh.text(sent, class_="text-sm text-muted-foreground", test_id="status"),
         class_="p-4 gap-3",
