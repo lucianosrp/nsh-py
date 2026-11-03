@@ -21,25 +21,31 @@ pub(crate) fn in_engine() -> bool {
     ENGINE_DEPTH.with(Cell::get) > 0
 }
 
-/// Runs `f` with the GIL, marked as inside the engine. A Python exception
-/// it returns is logged (`nsh` logger) and becomes `None`.
-pub(crate) fn call<R>(f: impl FnOnce(Python<'_>) -> PyResult<R>) -> Option<R> {
+/// Runs `f` marked as inside the engine (see [`in_engine`]). Used for what
+/// runs on the engine thread: calls into Python and queued jobs.
+pub(crate) fn enter<R>(f: impl FnOnce() -> R) -> R {
     struct Leave;
     impl Drop for Leave {
         fn drop(&mut self) {
             ENGINE_DEPTH.with(|d| d.set(d.get() - 1));
         }
     }
+    ENGINE_DEPTH.with(|d| d.set(d.get() + 1));
+    let _leave = Leave;
+    f()
+}
+
+/// Runs `f` with the GIL, marked as inside the engine. A Python exception
+/// it returns is logged (`nsh` logger) and becomes `None`.
+pub(crate) fn call<R>(f: impl FnOnce(Python<'_>) -> PyResult<R>) -> Option<R> {
     Python::attach(|py| {
-        ENGINE_DEPTH.with(|d| d.set(d.get() + 1));
-        let _leave = Leave;
-        match f(py) {
+        enter(|| match f(py) {
             Ok(value) => Some(value),
             Err(err) => {
                 report(py, err);
                 None
             }
-        }
+        })
     })
 }
 

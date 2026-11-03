@@ -32,7 +32,6 @@ only when one of them changes. See docs/architecture.md.
 from __future__ import annotations
 
 import functools
-import logging
 import threading
 import weakref
 from collections.abc import Callable
@@ -42,8 +41,6 @@ from nsh import _core
 
 T = TypeVar("T")
 U = TypeVar("U")
-
-logger = logging.getLogger("nsh")
 
 _local = threading.local()
 
@@ -96,27 +93,37 @@ class _Source(Generic[T]):
             self._trigger.track()
 
     def _changed(self) -> None:
-        """Tell everything that read this: computeds first, then NSH."""
+        """Tell everything that read this: computeds first, then NSH.
+
+        NSH's graph and the computeds belong to the app's thread. From
+        another thread, while an app runs, the notify is posted there
+        (`nsh.call_soon`): the value is already stored, and the UI follows
+        soon. With no app there is nothing to post to: it runs right here.
+        """
+        if _core.in_engine() or not _core.app_active():
+            self._notify()
+        else:
+            _core.call_soon(self._notify)
+
+    def _notify(self) -> None:
         stale: list[_Source[Any]] = [self]
         for dependent in list(self._dependents):
             dependent._mark_stale(stale)
-        for source in stale:
-            trigger = source._trigger
-            if trigger is not None and not trigger.notify():
-                logger.warning(
-                    "Signal written outside the app's thread: the UI won't update. "
-                    "Write signals from handlers (on_press, ...) for now."
-                )
+        # Together: a binding that read a computed and its signal runs once.
+        _core.notify_all([s._trigger for s in stale if s._trigger is not None])
 
 
 class Signal(_Source[T]):
     """A value that bindings follow. Make one with `nsh.signal(value)`."""
 
-    __slots__ = ("_value",)
+    __slots__ = ("_value", "_lock")
 
     def __init__(self, value: T) -> None:
         super().__init__()
         self._value = value
+        # Writes from several threads (a worker and the app) must not lose
+        # updates: `update` reads, computes and stores under it.
+        self._lock = threading.RLock()
 
     def __call__(self) -> T:
         """The value, subscribing the running binding."""
@@ -138,15 +145,26 @@ class Signal(_Source[T]):
 
     def set(self, value: T) -> None:
         """Write `value`. Bindings that read the signal run again, unless
-        the new value equals the old one (`==`)."""
-        if _same(self._value, value):
-            return
-        self._value = value
+        the new value equals the old one (`==`).
+
+        Safe from any thread: the value is stored at once, and what reads
+        the signal follows on the app's thread, soon."""
+        with self._lock:
+            if _same(self._value, value):
+                return
+            self._value = value
         self._changed()
 
     def update(self, fn: Callable[[T], T]) -> None:
-        """Write `fn(value)`: `count.update(lambda n: n + 1)`."""
-        self.set(fn(self._value))
+        """Write `fn(value)`: `count.update(lambda n: n + 1)`.
+
+        Atomic against other writers, on any thread: no update is lost."""
+        with self._lock:
+            new = fn(self._value)
+            if _same(self._value, new):
+                return
+            self._value = new
+        self._changed()
 
     def mutate(self, fn: Callable[[T], Any]) -> None:
         """Change the value in place, then notify (always).
@@ -154,7 +172,8 @@ class Signal(_Source[T]):
         Lists and dicts changed in place are the same object, so `set`
         can't see the change: `items.mutate(lambda xs: xs.append(4))`.
         """
-        fn(self._value)
+        with self._lock:
+            fn(self._value)
         self._changed()
 
     # Handlers: each returns a function that takes no arguments, for on_press.

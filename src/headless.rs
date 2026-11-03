@@ -45,6 +45,7 @@ impl Headless {
     #[pyo3(signature = (root=None, *, size=(390.0, 844.0)))]
     fn new(py: Python<'_>, root: Option<Py<PyAny>>, size: (f32, f32)) -> PyResult<Self> {
         crate::app::set_root(root);
+        crate::queue::begin();
         let driver = py.detach(|| {
             let mut config = EngineConfig::new(crate::app::app_root());
             config.ui_sets = vec![nsh_base::registry()];
@@ -53,7 +54,14 @@ impl Headless {
                 .map_err(|e| PyRuntimeError::new_err(format!("could not start: {e}")))?;
             driver.first_render().map_err(PyTimeoutError::new_err)?;
             Ok::<_, PyErr>(driver)
-        })?;
+        });
+        let driver = match driver {
+            Ok(driver) => driver,
+            Err(err) => {
+                crate::queue::end();
+                return Err(err);
+            }
+        };
         Ok(Headless {
             driver: Mutex::new(Some(driver)),
         })
@@ -97,7 +105,26 @@ impl Headless {
     /// Stops the engine (joining its thread).
     fn close(&self, py: Python<'_>) {
         py.detach(|| {
-            self.driver.lock().unwrap_or_else(|e| e.into_inner()).take();
+            let driver = self.driver.lock().unwrap_or_else(|e| e.into_inner()).take();
+            if driver.is_some() {
+                drop(driver); // joins the engine thread
+                crate::queue::end();
+            }
         });
+    }
+}
+
+impl Drop for Headless {
+    fn drop(&mut self) {
+        let driver = self
+            .driver
+            .get_mut()
+            .unwrap_or_else(|e| e.into_inner())
+            .take();
+        if driver.is_some() {
+            // Joining the engine thread: it may be calling Python.
+            Python::attach(|py| py.detach(|| drop(driver)));
+            crate::queue::end();
+        }
     }
 }

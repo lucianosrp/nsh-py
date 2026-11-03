@@ -59,6 +59,8 @@ impl Component for AppRoot {
     type Event = NoEvent;
 
     fn view(_: (), cx: Scope<NoEvent>) -> impl IntoElement {
+        // Before the app's own code runs: it may post jobs from other threads.
+        crate::queue::install();
         let kind = ROOT.lock().unwrap_or_else(|e| e.into_inner()).take();
         match kind {
             Some(RootKind::Hello) | None => Hello::view((), cx).into_element(),
@@ -123,6 +125,7 @@ pub(crate) fn run(
     app_id: String,
 ) -> PyResult<()> {
     set_root(root);
+    crate::queue::begin();
 
     let interrupted = py.detach(move || {
         platform::set_ui_sets(vec![nsh_base::registry()]);
@@ -136,7 +139,9 @@ pub(crate) fn run(
                 ..Default::default()
             },
         );
-        interrupt::finish(watcher)
+        let interrupted = interrupt::finish(watcher);
+        crate::queue::end();
+        interrupted
     });
     match interrupted {
         Some(err) => Err(err),

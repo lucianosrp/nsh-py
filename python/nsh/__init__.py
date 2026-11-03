@@ -3,6 +3,7 @@
 from nsh._core import __version__
 from nsh._each import Each, each
 from nsh._element import Element
+from nsh._engine import call_soon
 from nsh._runtime import run
 from nsh._signals import Computed, Signal, computed, signal
 from nsh.components import button, card, table
@@ -15,6 +16,7 @@ __all__ = [
     "Signal",
     "__version__",
     "button",
+    "call_soon",
     "card",
     "computed",
     "each",
