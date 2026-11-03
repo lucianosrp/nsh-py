@@ -234,3 +234,28 @@ def test_run_py_puts_python_dir_on_the_path(tmp_path):
     assert out[0] == "__main__"
     assert out[1] == "['a', 'b']"
     assert out[2] == str(ROOT / "python")
+
+
+# --- .github/scripts/dev_core_manifest.py (used by dev-core.yml) -----------
+
+
+def test_dev_core_manifest_collects_wheels(tmp_path):
+    path = ROOT / ".github" / "scripts" / "dev_core_manifest.py"
+    spec = importlib.util.spec_from_file_location("nsh_dev_core_manifest", path)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    wheels = tmp_path / "wheels"
+    for key, name in {
+        "linux-x86_64": "nsh_py-0.0.1-cp310-abi3-linux_x86_64.whl",
+        "windows-x86_64": "nsh_py-0.0.1-cp310-abi3-win_amd64.whl",
+    }.items():
+        (wheels / f"wheels-{key}").mkdir(parents=True)
+        (wheels / f"wheels-{key}" / name).write_bytes(b"w")
+    out = tmp_path / "out"
+    manifest = mod.build_manifest(wheels, out, "abc", "f" * 64)
+    # What CI writes is what fetch_core reads.
+    assert fetch_core.parse_manifest((out / "manifest.json").read_text()) == manifest
+    assert manifest["wheels"]["windows-x86_64"].endswith("win_amd64.whl")
+    assert (out / "nsh_py-0.0.1-cp310-abi3-linux_x86_64.whl").is_file()
