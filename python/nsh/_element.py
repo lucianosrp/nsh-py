@@ -16,10 +16,13 @@ Maintainers own this module; contributions go in `nsh.primitives`
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
-Child = Union["Element", str, None, Callable[[], Any], list, tuple]
-"""A child: an element, a string (a text), None, a list, or a callable."""
+if TYPE_CHECKING:
+    from nsh._each import Each
+
+Child = Union["Element", str, None, Callable[[], Any], list, tuple, "Each[Any]"]
+"""A child: an element, a string (a text), None, a list, a callable, or `nsh.each`."""
 
 StrProp = Union[str, Callable[[], Any]]
 """A string, or a callable returning one (a binding)."""
