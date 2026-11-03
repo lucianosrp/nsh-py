@@ -2,6 +2,7 @@ use pyo3::prelude::*;
 
 mod app;
 mod bridge;
+mod headless;
 mod signal;
 mod tree;
 
@@ -11,5 +12,6 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(app::run, m)?)?;
     m.add_function(wrap_pyfunction!(signal::in_engine, m)?)?;
     m.add_class::<signal::Trigger>()?;
+    m.add_class::<headless::Headless>()?;
     Ok(())
 }

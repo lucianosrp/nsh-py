@@ -96,6 +96,21 @@ fn python_root(root: Py<PyAny>) -> AnyElement {
     }
 }
 
+/// Stores the root the next engine shows: Python's `root`, or the Rust
+/// hello component for `None`.
+pub(crate) fn set_root(root: Option<Py<PyAny>>) {
+    let kind = match root {
+        None => RootKind::Hello,
+        Some(root) => RootKind::Python(root),
+    };
+    *ROOT.lock().unwrap_or_else(|e| e.into_inner()) = Some(kind);
+}
+
+/// The app's root: [`AppRoot`] with nsh-base's default theme.
+pub(crate) fn app_root() -> nsh_core::element::Root {
+    nsh_core::element::Root::of::<AppRoot>().tokens(nsh_base::Theme::default().into_tokens())
+}
+
 /// Runs the app until its window closes. Raises `KeyboardInterrupt` if
 /// Ctrl-C stopped it.
 #[pyfunction]
@@ -107,21 +122,13 @@ pub(crate) fn run(
     size: (i32, i32),
     app_id: String,
 ) -> PyResult<()> {
-    let kind = match root {
-        None => RootKind::Hello,
-        Some(root) => RootKind::Python(root),
-    };
-    *ROOT.lock().unwrap_or_else(|e| e.into_inner()) = Some(kind);
+    set_root(root);
 
     let interrupted = py.detach(move || {
         platform::set_ui_sets(vec![nsh_base::registry()]);
         let watcher = interrupt::install();
         let _ = platform::run_app(
-            platform::AppSource::Rust(
-                platform::Root::of::<AppRoot>()
-                    .tokens(nsh_base::Theme::default().into_tokens())
-                    .app_id(app_id.clone()),
-            ),
+            platform::AppSource::Rust(app_root().app_id(app_id.clone())),
             platform::AppOptions {
                 title,
                 size,

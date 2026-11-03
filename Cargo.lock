@@ -1340,10 +1340,25 @@ version = "0.0.1"
 dependencies = [
  "nsh-base",
  "nsh-core",
+ "nsh-engine",
  "nsh-platform-linux",
  "nsh-platform-macos",
  "nsh-platform-windows",
+ "nsh-testing",
  "pyo3",
+]
+
+[[package]]
+name = "nsh-testing"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a6448ac8a158f40f333fa38236149e19da4eef0e3994b8e73d08faac6bd45c08"
+dependencies = [
+ "crossbeam-channel",
+ "log",
+ "nsh-core",
+ "nsh-engine",
+ "regex",
 ]
 
 [[package]]

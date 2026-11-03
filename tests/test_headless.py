@@ -1,0 +1,129 @@
+"""Apps running headless through nsh-testing: no window, no display."""
+
+import logging
+import pathlib
+import runpy
+
+import pytest
+
+import nsh
+from nsh.testing import open
+
+EXAMPLES = pathlib.Path(__file__).parent.parent / "examples"
+
+
+def load_example(name):
+    return runpy.run_path(str(EXAMPLES / f"{name}.py"))
+
+
+def test_rust_hello():
+    with open() as app:
+        assert "Hello from Rust" in app.texts()
+
+
+def test_counter_example():
+    Counter = load_example("counter")["Counter"]
+    with open(Counter) as app:
+        assert app.shows("Count: 0")
+        app.press("+1")
+        app.press("id:inc")
+        app.wait_for("Count: 2")
+        app.press("−1")
+        app.press("−1")
+        app.press("−1")
+        app.wait_for("Count: -1")
+        assert "negative" in app.texts()
+
+
+def test_bindings_update_independently():
+    renders = []
+
+    def App():
+        a, b = nsh.signal(0), nsh.signal(0)
+
+        def show_a():
+            renders.append("a")
+            return f"a={a()}"
+
+        return nsh.view(
+            nsh.text(show_a),
+            nsh.text(lambda: f"b={b()}"),
+            nsh.button("bump b", on_press=lambda: b.update(lambda n: n + 1)),
+        )
+
+    with open(App) as app:
+        app.press("bump b")
+        app.wait_for("b=1")
+        # Only the binding that read b ran again.
+        assert renders == ["a"]
+
+
+def test_callable_child_region():
+    def App():
+        items = nsh.signal(["x"])
+        return nsh.view(
+            lambda: [nsh.text(f"item {i}") for i in items()],
+            nsh.button("add", on_press=lambda: items.mutate(lambda xs: xs.append("y"))),
+        )
+
+    with open(App) as app:
+        app.press("add")
+        app.wait_for("item y")
+        assert app.texts()[:2] == ["item x", "item y"]
+
+
+def test_handler_exception_is_logged_and_app_survives(caplog):
+    def App():
+        count = nsh.signal(0)
+
+        def boom():
+            raise ValueError("handler failed")
+
+        return nsh.view(
+            nsh.text(lambda: f"n={count()}"),
+            nsh.button("boom", on_press=boom),
+            nsh.button("inc", on_press=lambda: count.update(lambda n: n + 1)),
+        )
+
+    with caplog.at_level(logging.ERROR, logger="nsh"), open(App) as app:
+        app.press("boom")
+        app.press("inc")
+        app.wait_for("n=1")
+    errors = [r for r in caplog.records if r.exc_info]
+    assert len(errors) == 1
+    assert isinstance(errors[0].exc_info[1], ValueError)
+
+
+def test_root_exception_shows_error_page(caplog):
+    def App():
+        raise RuntimeError("no view")
+
+    with caplog.at_level(logging.ERROR, logger="nsh"), open(App) as app:
+        assert app.shows("The app's root raised an exception")
+    assert "no view" in caplog.text
+
+
+def test_wait_for_timeout():
+    with open(lambda: nsh.text("here")) as app:
+        with pytest.raises(TimeoutError):
+            app.wait_for("not here", timeout=0.2)
+
+
+SHARED = nsh.signal(0)
+
+
+def shared_app():
+    return nsh.view(
+        nsh.text(lambda: f"shared={SHARED()}"),
+        nsh.button("inc", on_press=lambda: SHARED.update(lambda n: n + 1)),
+    )
+
+
+@pytest.mark.parametrize("run", [1, 2])
+def test_module_level_signal_across_apps(run):
+    # Each app has its own engine thread and reactive graph; the signal's
+    # NSH trigger from the first must not leak into the second.
+    with open(shared_app) as app:
+        before = SHARED.peek()
+        app.press("inc")
+        app.wait_for(f"shared={before + 1}")
