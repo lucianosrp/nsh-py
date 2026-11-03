@@ -127,3 +127,39 @@ def test_module_level_signal_across_apps(run):
         before = SHARED.peek()
         app.press("inc")
         app.wait_for(f"shared={before + 1}")
+
+
+def test_decorators_and_computed_in_the_engine():
+    def App():
+        count = nsh.signal(0)
+
+        @nsh.computed
+        def parity():
+            return "even" if count() % 2 == 0 else "odd"
+
+        @count.updater
+        def increment(n):
+            return n + 1
+
+        def add_two():
+            count.value += 2
+
+        return nsh.view(
+            nsh.text(count.map(lambda n: f"n={n}")),
+            nsh.text(parity),
+            nsh.button("inc", on_press=increment),
+            nsh.button("two", on_press=add_two),
+            nsh.button("reset", on_press=count.setter(0)),
+        )
+
+    with open(App) as app:
+        assert app.shows("n=0") and app.shows("even")
+        app.press("inc")
+        app.wait_for("n=1")
+        assert app.shows("odd")
+        app.press("two")
+        app.wait_for("n=3")
+        assert app.shows("odd")
+        app.press("reset")
+        app.wait_for("n=0")
+        assert app.shows("even")

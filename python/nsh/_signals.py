@@ -2,29 +2,58 @@
 
     count = nsh.signal(0)
     count()                          # read (subscribes the running binding)
+    count.value                      # the same read, as a property
     count.set(1)                     # write: what read it runs again
+    count.value = 1                  # the same write
+    count.value += 1                 # read, then write
     count.update(lambda n: n + 1)    # write from the current value
 
-A read subscribes only inside a binding: a lambda passed where a value goes
-(`nsh.text(lambda: f"{count()}")`) or a callable child. A value read
-outside one is read once: `nsh.text(f"{count()}")` never changes.
+    @nsh.computed                    # a derived value, cached
+    def label():
+        return f"Count: {count()}"
+
+    @count.updater                   # a handler: on_press=increment
+    def increment(n):
+        return n + 1
+
+Every style works everywhere: pick lambdas, named functions or decorators.
+
+A read subscribes only inside a binding: a callable passed where a value
+goes (`nsh.text(lambda: f"{count()}")`, `nsh.text(label)`) or a callable
+child. A value read outside one is read once: `nsh.text(f"{count()}")` and
+`nsh.text(count.value)` never change.
 
 The value lives in Python. Each signal holds an NSH signal (a "trigger")
 that NSH's reactive graph tracks, so only the bindings that read it run
-again. See docs/architecture.md.
+again. A computed also remembers which signals it read, so it recomputes
+only when one of them changes. See docs/architecture.md.
 """
 
 from __future__ import annotations
 
+import functools
 import logging
+import threading
+import weakref
 from collections.abc import Callable
 from typing import Any, Generic, TypeVar
 
 from nsh import _core
 
 T = TypeVar("T")
+U = TypeVar("U")
 
 logger = logging.getLogger("nsh")
+
+_local = threading.local()
+
+
+def _collecting() -> list[set[_Source[Any]]]:
+    """The sources read by each computed being computed now (innermost last)."""
+    stack = getattr(_local, "stack", None)
+    if stack is None:
+        stack = _local.stack = []
+    return stack
 
 
 def _same(old: Any, new: Any) -> bool:
@@ -36,22 +65,72 @@ def _same(old: Any, new: Any) -> bool:
         return False
 
 
-class Signal(Generic[T]):
-    """A value that bindings follow. Make one with `nsh.signal(value)`."""
+class _Source(Generic[T]):
+    """What signals and computeds share: a trigger and the computeds that read it."""
 
-    __slots__ = ("_value", "_trigger", "__weakref__")
+    __slots__ = ("_trigger", "_dependents", "__weakref__")
 
-    def __init__(self, value: T) -> None:
-        self._value = value
+    def __init__(self) -> None:
         self._trigger: _core.Trigger | None = None
+        self._dependents: weakref.WeakSet[Computed[Any]] = weakref.WeakSet()
 
-    def __call__(self) -> T:
-        """The value, subscribing the running binding."""
+    def __call__(self) -> T:  # pragma: no cover - overridden
+        raise NotImplementedError
+
+    @property
+    def value(self) -> T:
+        """The value, subscribing the running binding (same as calling it)."""
+        return self()
+
+    def map(self, fn: Callable[[T], U]) -> Computed[U]:
+        """A computed of `fn(value)`: `nsh.text(count.map(lambda n: f"{n} items"))`."""
+        return Computed(lambda: fn(self()))
+
+    def _track(self) -> None:
+        stack = _collecting()
+        if stack:
+            stack[-1].add(self)
         if _core.in_engine():
             if self._trigger is None:
                 self._trigger = _core.Trigger()
             self._trigger.track()
+
+    def _changed(self) -> None:
+        """Tell everything that read this: computeds first, then NSH."""
+        stale: list[_Source[Any]] = [self]
+        for dependent in list(self._dependents):
+            dependent._mark_stale(stale)
+        for source in stale:
+            trigger = source._trigger
+            if trigger is not None and not trigger.notify():
+                logger.warning(
+                    "Signal written outside the app's thread: the UI won't update. "
+                    "Write signals from handlers (on_press, ...) for now."
+                )
+
+
+class Signal(_Source[T]):
+    """A value that bindings follow. Make one with `nsh.signal(value)`."""
+
+    __slots__ = ("_value",)
+
+    def __init__(self, value: T) -> None:
+        super().__init__()
+        self._value = value
+
+    def __call__(self) -> T:
+        """The value, subscribing the running binding."""
+        self._track()
         return self._value
+
+    @property
+    def value(self) -> T:
+        """The value. Reading subscribes the running binding; assigning is `set`."""
+        return self()
+
+    @value.setter
+    def value(self, value: T) -> None:
+        self.set(value)
 
     def peek(self) -> T:
         """The value, without subscribing anything."""
@@ -63,7 +142,7 @@ class Signal(Generic[T]):
         if _same(self._value, value):
             return
         self._value = value
-        self._notify()
+        self._changed()
 
     def update(self, fn: Callable[[T], T]) -> None:
         """Write `fn(value)`: `count.update(lambda n: n + 1)`."""
@@ -76,20 +155,128 @@ class Signal(Generic[T]):
         can't see the change: `items.mutate(lambda xs: xs.append(4))`.
         """
         fn(self._value)
-        self._notify()
+        self._changed()
 
-    def _notify(self) -> None:
-        trigger = self._trigger
-        if trigger is not None and not trigger.notify():
-            logger.warning(
-                "Signal written outside the app's thread: the UI won't update. "
-                "Write signals from handlers (on_press, ...) for now."
-            )
+    # Handlers: each returns a function that takes no arguments, for on_press.
+
+    def setter(self, value: T) -> Callable[[], None]:
+        """A handler that sets `value`: `on_press=count.setter(0)`."""
+
+        def handler() -> None:
+            self.set(value)
+
+        return handler
+
+    def updater(self, fn: Callable[[T], T]) -> Callable[[], None]:
+        """A handler that runs `update(fn)`. Use it as a decorator::
+
+            @count.updater
+            def increment(n):
+                return n + 1
+
+            nsh.button("+1", on_press=increment)
+        """
+
+        def handler() -> None:
+            self.update(fn)
+
+        return functools.wraps(fn)(handler)
+
+    def mutator(self, fn: Callable[[T], Any]) -> Callable[[], None]:
+        """A handler that runs `mutate(fn)`. Use it as a decorator::
+
+            @items.mutator
+            def add_item(xs):
+                xs.append("new")
+        """
+
+        def handler() -> None:
+            self.mutate(fn)
+
+        return functools.wraps(fn)(handler)
 
     def __repr__(self) -> str:
         return f"signal({self._value!r})"
 
 
+_STALE = object()
+
+
+class Computed(_Source[T]):
+    """A value derived from signals, cached until one of them changes.
+
+    Make one with `nsh.computed(fn)`, or `@nsh.computed` on a function
+    that takes no arguments. Read it like a signal: `label()` or
+    `label.value`. It can't be set.
+    """
+
+    __slots__ = ("_fn", "_value", "_sources", "_computing", "_name")
+
+    def __init__(self, fn: Callable[[], T]) -> None:
+        super().__init__()
+        self._fn = fn
+        self._value: Any = _STALE
+        self._sources: set[_Source[Any]] = set()
+        self._computing = False
+        self._name = getattr(fn, "__name__", "computed")
+
+    def __call__(self) -> T:
+        """The value (computed now if a source changed), subscribing the running binding."""
+        self._track()
+        return self.peek()
+
+    def peek(self) -> T:
+        """The value, without subscribing anything."""
+        if self._value is _STALE:
+            self._compute()
+        return self._value
+
+    def _compute(self) -> None:
+        if self._computing:
+            raise RuntimeError(f"computed {self._name!r} reads itself")
+        for source in self._sources:
+            source._dependents.discard(self)
+        read: set[_Source[Any]] = set()
+        stack = _collecting()
+        stack.append(read)
+        self._computing = True
+        try:
+            value = self._fn()
+        finally:
+            self._computing = False
+            stack.pop()
+            self._sources = read
+            for source in read:
+                source._dependents.add(self)
+        self._value = value
+
+    def _mark_stale(self, stale: list[_Source[Any]]) -> None:
+        if self._value is _STALE:
+            return  # already stale: its readers were told
+        self._value = _STALE
+        stale.append(self)
+        for dependent in list(self._dependents):
+            dependent._mark_stale(stale)
+
+    def __repr__(self) -> str:
+        shown = "<not computed>" if self._value is _STALE else repr(self._value)
+        return f"computed({self._name}: {shown})"
+
+
 def signal(value: T) -> Signal[T]:
     """A new signal holding `value`."""
     return Signal(value)
+
+
+def computed(fn: Callable[[], T]) -> Computed[T]:
+    """A cached value derived from signals. Use it as a decorator::
+
+        @nsh.computed
+        def total():
+            return sum(prices())
+
+        nsh.text(lambda: f"Total: {total()}")
+
+    or inline: `nsh.computed(lambda: count() * 2)`.
+    """
+    return Computed(fn)
