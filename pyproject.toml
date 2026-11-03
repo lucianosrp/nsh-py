@@ -46,3 +46,7 @@ cache-keys = [
     { file = "rust-toolchain.toml" },
     { file = "src/**/*.rs" },
 ]
+
+[tool.pytest.ini_options]
+# Which `nsh` the tests import is decided in tests/conftest.py.
+testpaths = ["tests"]

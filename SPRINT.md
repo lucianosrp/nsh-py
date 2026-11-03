@@ -41,6 +41,33 @@ You don't need to know Rust for the first track. The rule of thumb:
 
 ## Setup (do this before the sprint if you can)
 
+Pick the path for your track. Both end with tests passing and a window opening.
+
+### Python-only track: no Rust, no LLVM, no GTK dev packages
+
+CI keeps a prebuilt core of `main` (the compiled extension) on the `dev-core`
+release. You download it once and run everything straight from the checkout.
+
+1. Install [uv](https://docs.astral.sh/uv/) and Git. On Linux you also need the GTK 4
+   *runtime* (GTK 4.14+, Ubuntu 24.04+, Debian 13, Fedora 40+, Arch; on Ubuntu
+   `sudo apt install libgtk-4-1`). macOS needs 14+ and Windows 10 1809+.
+2. Clone the repo, then fetch the core and check it works:
+   ```sh
+   uv run --no-project python tools/fetch_core.py                   # downloads python/nsh/_core.*
+   uv run --no-project --with pytest pytest -q tests                # headless tests
+   uv run --no-project python tools/run.py examples/counter.py      # opens a window
+   ```
+   `tools/run.py` runs a script with `python/` on the import path (`nsh` isn't
+   installed in this flow). `--no-project` stops uv from building the Rust extension.
+3. If you branch from an old `main`, or someone changed Rust, `fetch_core.py` warns that your
+   Rust differs from the prebuilt core. Rebase on `main` and fetch again (`--force` fetches
+   even when the core looks current). If you need your own Rust, use the other path.
+
+Python-only work stays in `python/nsh/components/`, `examples/` and `tests/`. Editing
+`src/*.rs` needs the Rust path.
+
+### Python + Rust and Platforms tracks: build the extension yourself
+
 1. Install [uv](https://docs.astral.sh/uv/) and Git.
 2. Install the platform requirements:
    - **Linux:** GTK 4.14+ and glibc 2.39+ (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch),
@@ -57,8 +84,9 @@ You don't need to know Rust for the first track. The rule of thumb:
    uv run python examples/counter.py # opens a window
    ```
 
-A prebuilt core, so the Python-only track can skip Rust entirely, is
-planned but not ready yet.
+`tools/doctor.py` checks this path's requirements. Don't mix the two paths in one checkout
+without a reason: a fetched core in `python/nsh/` is overwritten by `uv run`'s build, and
+`fetch_core.py` overwrites a local build (it tells you).
 
 ## Workflow
 

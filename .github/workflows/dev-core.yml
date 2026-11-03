@@ -1,0 +1,75 @@
+# Prebuilt dev core: wheels built from the tip of main, for contributors who
+# only write Python (no Rust, LLVM or GTK dev packages).
+#
+# After every push to main this builds the wheels (build-wheels.yml) and
+# updates the rolling prerelease `dev-core`: its tag is force-moved to the
+# commit, and its assets are the wheels plus manifest.json:
+#
+#   {"commit": ..., "source_hash": ..., "wheels": {"<platform key>": "<file>"}}
+#
+# `python tools/fetch_core.py` reads that manifest and pulls the compiled
+# extension into python/nsh/ (see SPRINT.md). The same release also works as
+# a bleeding-edge find-links URL:
+#   uv pip install nsh-py \
+#     --find-links https://github.com/lucianosrp/nsh-py/releases/expanded_assets/dev-core
+#
+# Safety: it only runs on pushes to main (and manual runs, which are
+# refused unless they are on main), never for pull requests, so a PR from a
+# fork can't touch the release. Runs queue one at a time (concurrency
+# group) so the release is never half old, half new.
+name: Dev core
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dev-core
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and test
+    if: github.repository == 'lucianosrp/nsh-py' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/build-wheels.yml
+
+  publish:
+    name: Update the dev-core release
+    needs: build
+    if: github.repository == 'lucianosrp/nsh-py' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: wheels-*
+          path: wheels
+
+      - name: Write manifest.json next to the wheels
+        run: python3 .github/scripts/dev_core_manifest.py wheels out
+
+      - name: Update the rolling release
+        run: |
+          cat > notes.md <<NOTES
+          Rolling build of \`main\` at ${GITHUB_SHA}. Replaced on every push to main.
+
+          For Python-only contributors: \`python tools/fetch_core.py\` downloads the right wheel's
+          compiled extension into \`python/nsh/\` (see SPRINT.md). \`manifest.json\` records the commit
+          and a hash of the Rust sources, so the tool can tell when your checkout differs.
+
+          Bleeding-edge install:
+
+          \`\`\`sh
+          uv pip install nsh-py --no-index --find-links https://github.com/${GITHUB_REPOSITORY}/releases/expanded_assets/dev-core
+          \`\`\`
+          NOTES
+          .github/scripts/rolling-release.sh dev-core "dev-core (${GITHUB_SHA::7})" notes.md out/*
