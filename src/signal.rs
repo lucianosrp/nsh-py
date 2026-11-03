@@ -3,19 +3,49 @@
 //! running and writes to notify it. The value stays in Python; NSH's graph
 //! decides what runs again. See `docs/architecture.md`.
 
-use std::cell::Cell;
+use std::{
+    sync::Mutex,
+    thread::{self, ThreadId},
+};
 
 use nsh_core::{element::create_root, prelude::*};
 use pyo3::prelude::*;
 
 use crate::bridge;
 
+/// The NSH signal behind a trigger, and the engine thread whose graph holds
+/// it: ids from one engine mean nothing in another's (a signal that outlives
+/// a headless app in tests).
+#[derive(Clone, Copy)]
+struct Made {
+    thread: ThreadId,
+    owner: Owner,
+    signal: Signal<()>,
+}
+
 /// An NSH `Signal<()>` that notifies on every write, made on first use
-/// inside the engine under an owner of its own. A `Cell`, not `&mut self`:
-/// reading the signal can run bindings that read it again (re-entrant).
-#[pyclass(unsendable, module = "nsh._core")]
+/// inside the engine under an owner of its own.
+///
+/// Not `unsendable`: Python may free it on any thread (the main thread
+/// once an app's engine stops), and its handles are plain ids. The lock is
+/// held only to copy them out: reading the signal can run bindings that
+/// read it again (re-entrant).
+#[pyclass(module = "nsh._core")]
 pub(crate) struct Trigger {
-    made: Cell<Option<(Owner, Signal<()>)>>,
+    made: Mutex<Option<Made>>,
+}
+
+impl Trigger {
+    fn made(&self) -> Option<Made> {
+        *self.made.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// Its signal in this engine's graph, if it has a live one.
+    fn here(&self) -> Option<Signal<()>> {
+        self.made()
+            .filter(|m| m.thread == thread::current().id() && m.owner.is_live())
+            .map(|m| m.signal)
+    }
 }
 
 #[pymethods]
@@ -23,7 +53,7 @@ impl Trigger {
     #[new]
     fn new() -> Self {
         Trigger {
-            made: Cell::new(None),
+            made: Mutex::new(None),
         }
     }
 
@@ -33,14 +63,18 @@ impl Trigger {
         if !bridge::in_engine() {
             return;
         }
-        let signal = match self.made.get() {
-            Some((owner, signal)) if owner.is_live() => signal,
-            _ => {
+        let signal = match self.here() {
+            Some(signal) => signal,
+            None => {
                 // Its own root: the binding that first read it must not
                 // dispose it when it runs again.
-                let made = create_root(|| signal_with((), SignalEquals::Never));
-                self.made.set(Some(made));
-                made.1
+                let (owner, signal) = create_root(|| signal_with((), SignalEquals::Never));
+                *self.made.lock().unwrap_or_else(|e| e.into_inner()) = Some(Made {
+                    thread: thread::current().id(),
+                    owner,
+                    signal,
+                });
+                signal
             }
         };
         signal.try_get();
@@ -49,26 +83,35 @@ impl Trigger {
     /// Runs again what read it. Returns false if it could not: called
     /// outside the engine while something is subscribed.
     fn notify(&self) -> bool {
-        let Some((_, signal)) = self.made.get() else {
+        if self.made().is_none() {
             // Never read inside the engine: nothing to notify.
             return true;
-        };
+        }
         if !bridge::in_engine() {
             return false;
         }
-        signal.try_set(());
+        if let Some(signal) = self.here() {
+            signal.try_set(());
+        }
         true
     }
 }
 
 impl Drop for Trigger {
     fn drop(&mut self) {
-        // The graph can only be touched while the engine runs Python; a
-        // trigger dropped elsewhere leaks one empty slot until the app ends.
-        if let Some((owner, _)) = self.made.take()
+        // The graph can only be touched on its engine thread while it runs
+        // Python; a trigger dropped elsewhere leaves one empty slot, freed
+        // with its engine.
+        let made = self
+            .made
+            .get_mut()
+            .unwrap_or_else(|e| e.into_inner())
+            .take();
+        if let Some(made) = made
             && bridge::in_engine()
+            && made.thread == thread::current().id()
         {
-            owner.dispose();
+            made.owner.dispose();
         }
     }
 }
