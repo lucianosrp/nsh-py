@@ -27,6 +27,9 @@ Child = Union["Element", str, None, Callable[[], Any], list, tuple, "Each[Any]"]
 StrProp = str | Callable[[], Any]
 """A string, or a callable returning one (a binding)."""
 
+BoolProp = Union[bool, Callable[[], Any]]
+"""A bool, or a callable returning one (a binding)."""
+
 Handler = Callable[[], Any]
 """An event handler. Exceptions it raises are logged; the app keeps running."""
 
