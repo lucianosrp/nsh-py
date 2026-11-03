@@ -1,11 +1,16 @@
 """`nsh.each`: keyed lists render only the rows that came."""
 
 import logging
+import pathlib
+import runpy
 
 import pytest
 
 import nsh
 from nsh.testing import open
+
+EXAMPLES = pathlib.Path(__file__).parent.parent / "examples"
+
 
 def todo(id, title, done=False):
     return {"id": id, "title": title, "done": done}
@@ -247,3 +252,15 @@ def test_unhashable_key_is_reported(caplog):
         assert app.shows("row 1")
     assert "key must be hashable" in caplog.text
 
+
+def test_todo_example():
+    TodoApp = runpy.run_path(str(EXAMPLES / "todo.py"))["TodoApp"]
+    with open(TodoApp) as app:
+        assert app.shows("Buy milk")
+        app.press("id:toggle-1")
+        app.wait_for("✓ Buy milk")
+        app.press("id:add")
+        app.wait_for("Task 4")
+        app.press("id:remove-2")
+        assert not app.shows("Write docs")
+        assert app.shows("2 of 3 left")
