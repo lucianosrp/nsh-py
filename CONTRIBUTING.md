@@ -32,6 +32,12 @@ minutes), and again whenever `src/**/*.rs`, `Cargo.*` or `pyproject.toml`
 change. It uses the dev profile, so a Rust edit costs about 1–3 seconds.
 You never run `maturin` by hand.
 
+**No Rust installed?** If you only touch Python, skip the build: fetch the
+prebuilt core once with `uv run --no-project python tools/fetch_core.py`, then
+run `uv run --no-project --with pytest pytest -q tests` and
+`uv run --no-project python tools/run.py examples/counter.py`. SPRINT.md
+(Setup) has the details and says when the core is out of date.
+
 ## Walkthrough A: add a component (Python only)
 
 We'll add `card`, a bordered surface with an optional title and
