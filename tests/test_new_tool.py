@@ -30,13 +30,37 @@ EDITED = [
 ]
 
 
+FIXTURE = Path(__file__).parent / "fixtures" / "new_tool"
+"""A frozen copy of the files the tool edits (exports: button, card, table;
+kinds: input, scroll, text, view), so these tests don't change each time a
+component is added to the real tree."""
+
+
+def copy_tree(src: Path, dest: Path) -> Path:
+    for rel in EDITED:
+        target = dest / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(src / rel, target)
+    return dest
+
+
 @pytest.fixture
 def repo(tmp_path: Path) -> Path:
-    for rel in EDITED:
-        dest = tmp_path / rel
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(ROOT / rel, dest)
-    return tmp_path
+    return copy_tree(FIXTURE, tmp_path)
+
+
+@pytest.mark.parametrize("kind", ["component", "primitive"])
+def test_scaffold_works_on_the_real_tree(kind, tmp_path):
+    """The tool still understands today's files (no exact text checked)."""
+    real = copy_tree(ROOT, tmp_path)
+    new.scaffold(kind, "zz_scaffold_check", real)
+    top = read(real, "python/nsh/__init__.py")
+    ast.parse(top)
+    assert "zz_scaffold_check" in all_of(top)
+    if kind == "primitive":
+        assert '("zz_scaffold_check", zz_scaffold_check::build)' in read(
+            real, "src/elements/mod.rs"
+        )
 
 
 def read(repo: Path, rel: str) -> str:

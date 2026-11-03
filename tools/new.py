@@ -2,19 +2,19 @@
 """Scaffold a new component or primitive.
 
 Usage:
-    uv run --no-project python tools/new.py component badge
-    uv run --no-project python tools/new.py primitive image
+    uv run --no-project python tools/new.py component avatar
+    uv run --no-project python tools/new.py primitive slider
 
 A component (Python only) writes:
-    python/nsh/components/badge.py
-    tests/components/test_badge.py
+    python/nsh/components/avatar.py
+    tests/components/test_avatar.py
 and adds the exports to python/nsh/components/__init__.py and
 python/nsh/__init__.py.
 
 A primitive (Python + Rust) writes:
-    python/nsh/primitives/image.py
-    tests/primitives/test_image.py
-    src/elements/image.rs
+    python/nsh/primitives/slider.py
+    tests/primitives/test_slider.py
+    src/elements/slider.rs
 and adds it to `KINDS` in src/elements/mod.rs and in
 python/nsh/primitives/__init__.py, and exports it from python/nsh/__init__.py.
 
@@ -300,7 +300,7 @@ def check_name(kind: str, name: str, root: Path) -> None:
     if not NAME_RE.match(name):
         raise ScaffoldError(
             f"`{name}` is not a good name: use lowercase snake_case "
-            "(letters, digits and single underscores, starting with a letter), like `badge`"
+            "(letters, digits and single underscores, starting with a letter), like `avatar`"
         )
     if keyword.iskeyword(name) or keyword.issoftkeyword(name) or hasattr(builtins, name):
         raise ScaffoldError(
@@ -386,7 +386,7 @@ def main(argv: list[str] | None = None) -> int:
         prog="new.py", description="Scaffold a new nsh component or primitive."
     )
     parser.add_argument("kind", choices=["component", "primitive"])
-    parser.add_argument("name", help="snake_case name, like `badge`")
+    parser.add_argument("name", help="snake_case name, like `avatar`")
     parser.add_argument("--root", type=Path, default=ROOT, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     try:

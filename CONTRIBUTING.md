@@ -26,7 +26,7 @@ uv run pytest -q tests                    # headless: no window needed
 uv run python examples/counter.py         # open a window
 uvx ruff@0.15.12 check --fix . && uvx ruff@0.15.12 format .   # lint and format the Python
 cargo fmt && cargo clippy -- -D warnings  # only if you touched Rust
-uv run --no-project python tools/new.py component badge   # start a new component
+uv run --no-project python tools/new.py component avatar   # start a new component
 ```
 
 CI runs the same two `ruff` commands (without `--fix`), so run them before
@@ -46,8 +46,8 @@ run `uv run --no-project --with pytest pytest -q tests` and
 
 ## Walkthrough A: add a component (Python only)
 
-**Quick start:** `uv run --no-project python tools/new.py component badge`
-writes `python/nsh/components/badge.py` and `tests/components/test_badge.py`,
+**Quick start:** `uv run --no-project python tools/new.py component avatar`
+writes `python/nsh/components/avatar.py` and `tests/components/test_avatar.py`,
 and adds the exports (steps 1 to 3 below). It never overwrites a file. Then
 fill in the TODOs. The steps below show what it writes.
 
@@ -176,9 +176,9 @@ Then open a PR with a screenshot (SPRINT.md has the checklist).
 
 ## Walkthrough B: add a primitive (Python + Rust)
 
-**Quick start:** `uv run python tools/new.py primitive image` writes
-`src/elements/image.rs`, `python/nsh/primitives/image.py` and
-`tests/primitives/test_image.py`, and registers the kind (steps 2 and 4
+**Quick start:** `uv run python tools/new.py primitive slider` writes
+`src/elements/slider.rs`, `python/nsh/primitives/slider.py` and
+`tests/primitives/test_slider.py`, and registers the kind (steps 2 and 4
 below). The Rust builds a plain `view` for now: replace it with the NSH
 builder you want to wrap (step 1). It never overwrites a file.
 
