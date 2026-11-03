@@ -1,7 +1,7 @@
 # nsh-py architecture
 
 nsh-py binds NSH's public Rust app API through PyO3 ("Path B" in
-`CLAUDE.md`; the full reasoning is in `docs/research/nsh-2026-11-03.md`).
+`AGENTS.md`; the full reasoning is in `docs/research/nsh-2026-11-03.md`).
 This page covers how the pieces fit and the decisions behind them.
 
 ## Layers and where code goes
