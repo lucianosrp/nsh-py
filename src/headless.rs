@@ -114,6 +114,17 @@ impl Headless {
         })
     }
 
+    /// Scrolls the scroll view `selector` names by `distance` points along
+    /// its axis (negative: back), then waits until the app settles.
+    fn scroll(&self, py: Python<'_>, selector: String, distance: f32) -> PyResult<()> {
+        self.with(py, |d| {
+            d.scroll(&selector, Points(distance))
+                .map_err(PyRuntimeError::new_err)?;
+            d.settle();
+            Ok(())
+        })
+    }
+
     /// The text an input holds (`selector` finds the input), or `None` if
     /// no input matches.
     fn value(&self, py: Python<'_>, selector: String) -> PyResult<Option<String>> {
