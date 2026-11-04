@@ -9,9 +9,9 @@ Python bindings for [Native Shell (NSH)](https://nsh.dev) by Longbridge: native 
 ## Goal and constraints
 - **Users:** Python developers who write simple, familiar Python and get native NSH UIs. The API should feel Pythonic, not like Rust.
 - **PyCon sprint:** an in-person sprint where contributors use macOS, Windows and Linux. Most contributors know little Rust, so the pure-Python layer (styled components on `nsh/base`, Tailwind classes, docs, examples, tests) is where most sprint work happens.
-- **Our own repo:** we don't fork NSH and don't depend on upstream contributions.
+- **Our own repo:** we don't fork NSH and don't depend on upstream changes. Exception: when we (the maintainers, not sprint contributors) hit a real NSH bug, we may file an issue or PR upstream. Sprint contributors never need to touch NSH; work around upstream bugs here and link the upstream issue. The web spike's nsh-core libc fix went upstream this way ([longbridge/nsh#896](https://github.com/longbridge/nsh/pull/896)).
 - **Distribution:** prebuilt abi3 wheels for Python 3.10+, like Polars, so end users never compile anything.
-- **Later: web.** A spike on branch `spike/web` runs the counter in a browser (Pyodide + nsh-platform-web); needs nightly Rust, a one-line nsh-core libc fix and a small nsh.js hook, not filed upstream yet. Details in `web/README.md` on that branch. Not sprint scope.
+- **Later: web.** A spike on branch `spike/web` runs the counter in a browser (Pyodide + nsh-platform-web); needs nightly Rust, a one-line nsh-core libc fix (merged upstream as longbridge/nsh#896, not yet in a release) and a small nsh.js hook (not filed upstream yet). Details in `web/README.md` on that branch. Not sprint scope.
 - **Later:** a Streamlit-style layer is a separate future project. Keep the layers clean so it can sit on top.
 - **Commits:** make atomic commits as work progresses.
 - **Delegation:** parallel work can be split across Sonnet (Claude) and Grok agents.
