@@ -3,7 +3,8 @@
 //! Python builds plain `nsh.Element` objects (`kind`, `props`,
 //! `children`); this module walks them on the engine thread and hands each
 //! element to its kind's builder (`crate::elements`). A callable child is a
-//! region made again when the signals it read change (`dynamic`).
+//! region made again when the signals it read change (`dynamic`); an
+//! `nsh.each` is a keyed region (`crate::each`).
 
 use nsh_core::prelude::*;
 use pyo3::{
@@ -12,7 +13,7 @@ use pyo3::{
     types::{PyDict, PyList, PyString, PyTuple},
 };
 
-use crate::{bridge, elements};
+use crate::{bridge, each, elements};
 
 /// `nsh._element.Element`.
 fn element_class(py: Python<'_>) -> PyResult<&Bound<'_, PyAny>> {
@@ -25,8 +26,9 @@ fn element_class(py: Python<'_>) -> PyResult<&Bound<'_, PyAny>> {
 }
 
 /// The elements `obj` stands for, as a child: an `Element`, a string (a
-/// text), `None` (nothing), a list or tuple of children, or a callable
-/// returning children (a region made again when what it reads changes).
+/// text), `None` (nothing), a list or tuple of children, an `nsh.each`
+/// (keyed rows), or a callable returning children (a region made again
+/// when what it reads changes).
 pub(crate) fn children(py: Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<Vec<AnyElement>> {
     if obj.is_none() {
         return Ok(Vec::new());
@@ -43,6 +45,9 @@ pub(crate) fn children(py: Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<Vec<A
             out.extend(children(py, &child?)?);
         }
         return Ok(out);
+    }
+    if obj.is_instance(each::class(py)?)? {
+        return Ok(vec![each::build(py, obj)?]);
     }
     if obj.is_callable() {
         let f = obj.clone().unbind();

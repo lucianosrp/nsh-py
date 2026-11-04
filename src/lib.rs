@@ -2,6 +2,7 @@ use pyo3::prelude::*;
 
 mod app;
 mod bridge;
+mod each;
 mod elements;
 mod headless;
 mod props;
