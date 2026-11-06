@@ -81,7 +81,11 @@ fn python_root(root: Py<PyAny>) -> AnyElement {
         };
         crate::tree::children(py, &tree)
     });
-    let page = view().app_class(Some(SharedString::from("flex-1 bg-background")));
+    // Text inherits `text-foreground`, so text with no colour of its own
+    // follows the theme instead of staying black on a dark background.
+    let page = view().app_class(Some(SharedString::from(
+        "flex-1 bg-background text-foreground",
+    )));
     match made {
         Some(children) => page.child(children).into_element(),
         None => {
