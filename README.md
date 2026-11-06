@@ -2,6 +2,51 @@
 
 Native UIs in plain Python, powered by [Native Shell (NSH)](https://nsh.dev).
 
+<table>
+<tr>
+<td>
+
+```python
+import nsh
+
+def Poll():
+    votes = nsh.signal({"Python": 8, "Rust": 3, "Both": 5})
+
+    @nsh.computed
+    def rows():
+        ranked = sorted(votes().items(), key=lambda kv: -kv[1])
+        return [{"language": k, "votes": n} for k, n in ranked]
+
+    def vote(choice):
+        return lambda: votes.update(lambda v: {**v, choice: v[choice] + 1})
+
+    buttons = [nsh.button(k, on_press=vote(k)) for k in votes.value]
+    return nsh.card(
+        nsh.table(rows),
+        nsh.view(*buttons, class_="flex-row gap-2"),
+        title="Favourite language",
+        description=lambda: f"{sum(votes().values())} votes so far",
+        class_="m-6",
+    )
+
+nsh.run(Poll, title="Poll")
+```
+
+</td>
+<td>
+
+<img src="docs/images/poll.png" alt="The poll app: a card titled Favourite language, 16 votes so far, a table of languages and votes, and three buttons" width="260">
+
+</td>
+</tr>
+</table>
+
+A signal holds the votes. The table, the total and the order follow it,
+and a press re-sorts the table: no callbacks to wire up. The code is
+[`examples/poll.py`](examples/poll.py).
+
+The smallest app is a counter:
+
 ```python
 import nsh
 

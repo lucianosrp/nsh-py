@@ -35,6 +35,18 @@ def test_counter_example():
         assert "negative" in app.texts()
 
 
+def test_poll_example():
+    Poll = load_example("poll")["Poll"]
+    with open(Poll) as app:
+        assert app.shows("16 votes so far")
+        assert app.texts().index("Python") < app.texts().index("Rust")
+        for _ in range(6):
+            app.press("role:button[Rust]")
+        app.wait_for("22 votes so far")
+        rows = app.texts()
+        assert rows.index("Rust") < rows.index("Python")  # 9 votes beat 8
+
+
 def test_counter_decorators_example():
     Counter = load_example("counter_decorators")["Counter"]
     with open(Counter) as app:
