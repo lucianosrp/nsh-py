@@ -17,8 +17,34 @@ def run(
 def in_engine() -> bool:
     """Whether Python code running now was called by the engine."""
 
+def notify_all(triggers: list[Trigger]) -> None:
+    """Notify triggers together, so what reads several runs once (src/signal.rs)."""
+
 def element_kinds() -> list[str]:
     """The element kinds this build knows (src/elements/mod.rs)."""
+
+def call_soon(func: Callable[..., Any], args: tuple[Any, ...] = ()) -> None:
+    """Run `func(*args)` on the engine thread, soon; right away with no app (src/queue.rs)."""
+
+def app_active() -> bool:
+    """Whether an app is starting or running: posted jobs will run (src/queue.rs)."""
+
+class Effect:
+    """An NSH effect running a Python function (src/schedule.rs). Engine thread only."""
+
+    def __init__(self, func: Callable[[], Any]) -> None: ...
+    def dispose(self) -> None: ...
+
+class Timer:
+    """A timer, started with `arm()` on the engine thread (src/schedule.rs)."""
+
+    def __init__(
+        self, func: Callable[..., Any], args: tuple[Any, ...], seconds: float, repeat: bool
+    ) -> None: ...
+    def arm(self) -> None: ...
+    def cancel(self) -> None: ...
+    @property
+    def cancelled(self) -> bool: ...
 
 class Trigger:
     """The NSH signal behind a Python signal (src/signal.rs)."""

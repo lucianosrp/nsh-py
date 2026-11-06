@@ -81,7 +81,9 @@ impl Trigger {
     }
 
     /// Runs again what read it. Returns false if it could not: called
-    /// outside the engine while something is subscribed.
+    /// outside the engine while something is subscribed. Writers on other
+    /// threads post the notify to the engine (`nsh.call_soon`), which is what
+    /// `nsh.signal` does.
     fn notify(&self) -> bool {
         if self.made().is_none() {
             // Never read inside the engine: nothing to notify.
@@ -99,21 +101,42 @@ impl Trigger {
 
 impl Drop for Trigger {
     fn drop(&mut self) {
-        // The graph can only be touched on its engine thread while it runs
-        // Python; a trigger dropped elsewhere leaves one empty slot, freed
-        // with its engine.
+        // The graph can only be touched on its engine thread. Dropped
+        // elsewhere, the disposal is posted there; with no app running the
+        // engine is gone and its graph with it.
         let made = self
             .made
             .get_mut()
             .unwrap_or_else(|e| e.into_inner())
             .take();
-        if let Some(made) = made
-            && bridge::in_engine()
-            && made.thread == thread::current().id()
-        {
+        let Some(made) = made else {
+            return;
+        };
+        if bridge::in_engine() && made.thread == thread::current().id() {
             made.owner.dispose();
+        } else {
+            let _ = crate::queue::post(Box::new(move || {
+                if made.thread == thread::current().id() && made.owner.is_live() {
+                    made.owner.dispose();
+                }
+            }));
         }
     }
+}
+
+/// Notifies `triggers` together: what read several of them (a binding that
+/// reads a computed and the signal it reads) runs once, not once for each.
+/// Does nothing outside the engine.
+#[pyfunction]
+pub(crate) fn notify_all(triggers: Vec<PyRef<'_, Trigger>>) {
+    if !bridge::in_engine() {
+        return;
+    }
+    batch(|| {
+        for trigger in &triggers {
+            trigger.notify();
+        }
+    });
 }
 
 /// Whether Python code running now was called by the engine.

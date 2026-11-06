@@ -17,6 +17,7 @@ python/nsh/
   _signals.py          signal(), Signal                                      │ core
   _each.py             each(): keyed lists (a marker, not a kind)            │
   _runtime.py          run(), report_exception()                             │ (maintainers)
+  _engine.py           call_soon, effect, set_timeout, set_interval          │
   testing.py           headless apps for tests                               ┘
 src/
   elements/            one file per kind (view.rs, text.rs); mod.rs has the KINDS table
@@ -25,6 +26,8 @@ src/
   each.rs              nsh.each as NSH's keyed `each` region
   bridge.rs            calling Python from the engine thread, error logging  ┐
   signal.rs            Trigger: the NSH signal behind each Python signal     │ core
+  queue.rs             the engine-thread queue: call_soon, posting jobs      │
+  schedule.rs          Effect and Timer: NSH effects and timers for Python   │
   app.rs               run(): the window, the root component, Ctrl-C         │
   headless.rs          nsh-testing's driver for nsh.testing                  ┘
 tests/
@@ -68,11 +71,50 @@ engine thread "nsh-engine" ──► AppRoot::view → Python App() → Element 
   timer checks every 100 ms. On `KeyboardInterrupt` it quits the
   `gio::Application`, and `nsh.run()` re-raises it. macOS and Windows
   don't have this yet (they need an AppKit/Win32 timer).
+- **Other threads:** any Python thread can reach the app through the
+  engine-thread queue (next section). `nsh.call_soon(fn, *args)` runs `fn`
+  on the engine thread, and signal writes use it.
 - **Errors:** every call from NSH into Python goes through `bridge::call`.
   An exception is logged on the `nsh` logger (with a traceback, even when
   logging isn't configured) and the app keeps running. A failed handler
   does nothing, a failed binding shows an empty string, and a root that
   raises shows an error page.
+
+## The engine-thread queue
+
+NSH's graph is thread-local, so a worker thread can't write a signal's
+trigger, make an effect or free a trigger's graph slot. It posts a job to
+the engine instead (`src/queue.rs`):
+
+- **The pump.** The root component spawns one long-lived NSH task. Each
+  time it is polled it runs the jobs queued so far, each marked
+  inside the engine (`bridge::enter`), then returns `Pending`. A task's
+  `Waker` is `Send` and waking it wakes the engine's loop on any thread
+  (`nsh-core`'s executor: "wakers may fire on any thread"), so a post is
+  `push job; waker.wake()`. No channel into the engine is needed, and the
+  headless driver (`nsh-testing`) sees the work as engine activity, so
+  `app.wait_for` waits for it.
+- **Order and fairness.** Jobs run in the order posted. A poll runs only the
+  jobs there were when it started and wakes itself if more arrived, so a
+  job that keeps posting can't starve the loop. A job posted from the
+  engine thread itself runs after the current handler, never inside it.
+- **States.** The queue is global (one app per process) and is *Idle* (no
+  app), *Starting* (`nsh.run` / `nsh.testing.open` began and the pump isn't
+  there yet: jobs wait) or *Running* (the pump holds the waker). `run()` and
+  `Headless` set it up and tear it down; when the pump task ends with its
+  owner the state goes back to Starting, and a pump that finishes after
+  `end()` can't revive it.
+- **No app.** With the queue Idle, `post` refuses. `nsh.call_soon` then runs
+  the function right away on the calling thread (there is no engine to wait
+  for, and a script that calls it before `nsh.run` shouldn't silently lose
+  the call). Jobs still queued when the app ends are dropped. A call made
+  while an app is *Starting* waits for it.
+- **Rules kept.** Posting takes a short lock and never waits for the
+  engine; the lock is never held while running or dropping a job, so
+  dropping a job's Python references can't deadlock. Python is only called
+  through `bridge::call`.
+- **Triggers dropped off the engine** (a `Signal` freed on a worker thread)
+  post their owner's disposal. With no app the graph is gone already.
 
 ## Signals: decision
 
@@ -117,8 +159,9 @@ Details:
 
 - The trigger lives under its own `create_root` owner. A binding that
   first read it doesn't own it, so re-running that binding can't dispose
-  it. It's disposed when the Python `Signal` is dropped on the engine
-  thread. Dropped elsewhere, one empty graph slot leaks until the app ends.
+  it. It's disposed when the Python `Signal` is dropped: at once on the
+  engine thread, posted there from any other thread (with no app running
+  the graph is gone already).
 - `Trigger` uses `Cell`, not `&mut self`: reading a signal can make NSH
   run bindings that read the same signal again, so it's re-entrant.
 - **Pitfall 1** (a read outside a lambda isn't reactive):
@@ -128,9 +171,17 @@ Details:
 - **Pitfall 2** (in-place mutation): `items().append(x)` changes nothing
   the signal can see. `items.mutate(lambda xs: xs.append(x))` changes the
   value in place and always notifies.
-- **Writes from other threads** (a Python worker thread) can't notify yet:
-  the value changes, the UI doesn't, and a warning is logged. The fix is to
-  post the write to the engine thread. That's a next step.
+- **Writes from other threads** (a Python worker thread) store the value
+  at once and post the notify to the engine (`_Source._changed`): the
+  computeds downstream are marked stale and the triggers notified there, in
+  one NSH `batch` so a binding that reads a computed and its signal runs
+  once. The UI follows soon. `set`, `update` and `mutate` hold a per-signal
+  lock while they read and store, so concurrent `update`s from a worker and
+  the app lose nothing. `fn` in `update` and `mutate` runs on the calling
+  thread, under the lock: keep it short. With no app running the notify
+  runs right where it is called. Reading computeds from worker threads is
+  not made safe (they compute on whichever thread reads them first): read
+  them in bindings, effects or posted calls.
 - **`computed`** caches in Python. While it computes, it records the
   signals it reads (a thread-local stack), and they hold it in a
   `WeakSet`. A write marks every computed downstream stale, then notifies
@@ -143,8 +194,26 @@ Details:
   or a signal can go anywhere a binding goes, and `count.updater(fn)`,
   `count.mutator(fn)` and `count.setter(v)` just return zero-argument
   handlers. Nothing in Rust knows about them.
-- `effect` isn't there yet. It needs an NSH effect owned by the engine
-  (Rust), with the same trigger approach.
+- **`effect`** is an NSH effect made on the engine (`schedule.rs`
+  `Effect`): it runs a Python function now and again when the triggers it
+  read notify. The Python side reads signals as usual (`count()` subscribes
+  the running effect). It lives in an owner of its own (so `.dispose()`
+  works) that the current owner disposes with a cleanup: a component's effect
+  ends with the component, a handler's with its element, a posted one with
+  the app's root. Made on another thread, it's posted, so its first run
+  isn't immediate; `dispose()` from any thread is posted too (a disposal
+  before the creation ran wins). **With no app** (a plain script, or before
+  `nsh.run`) the effect is Python only (`_engine.py`): a computed that
+  records what it reads as it reads, and is run again by `_notify` after the
+  downstream computeds are marked stale, on the writing thread. It's kept
+  alive until disposed, and stopped with an error if it keeps changing what
+  it reads (100 runs). It isn't tied to a component, so an effect made
+  before `nsh.run` stays Python only for good.
+- **Timers** (`set_timeout`, `set_interval`) are NSH tasks that wait on the
+  executor's timers (`schedule.rs` `Timer`), owned like effects. The handle
+  only holds an atomic flag, so `cancel()` works from any thread without
+  the queue: the callback stops being called at once, and the task ends
+  when it next wakes. They need a running app (`RuntimeError` otherwise).
 
 ## Keyed lists: `nsh.each`
 
