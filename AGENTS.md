@@ -32,11 +32,11 @@ Bind NSH's **public Rust app API** through PyO3. Don't write a script host next 
 - **Testing:** `nsh-testing` provides `Headless::start(EngineConfig::new(Root::of::<App>()))` with `.press("text:..")`, `.type_text("id:..", ..)` and `.wait_for(..)`. It needs no display.
 
 ## Pins and toolchain
-- NSH crates are pinned to exactly `=0.3.0`. Two of the four 0.x releases broke the API, and the compatibility freeze hasn't started yet. Bump deliberately, one PR per bump.
+- NSH crates are pinned to exactly `=0.4.0`. NSH's 0.x releases break the API (0.4.0 did too), and the compatibility freeze hasn't started yet. Bump deliberately, one PR per bump, and read the release's "Migrating" notes first.
 - ⚠ The crates.io crate named `nsh` is an unrelated shell. Depend on `nsh-core`, `nsh-base` and so on.
 - Rust 1.99.1 is pinned in `rust-toolchain.toml`. This machine's `stable` rustup toolchain is broken (no `rustc`), so use the pinned one.
 - PyO3 0.30: `Python::attach` / `py.detach` (the old names were `with_gil` / `allow_threads`).
-- NSH source is in `~/.cargo/registry/src/index.crates.io-*/nsh-*-0.3.0/`. Read it there, since it matches our pin. A checkout of NSH `main` (newer) at `/tmp/nsh-src` belongs to another session, so read it only and never build there.
+- NSH source is in `~/.cargo/registry/src/index.crates.io-*/nsh-*-0.4.0/`. Read it there, since it matches our pin. A checkout of NSH `main` (newer) at `/tmp/nsh-src` belongs to another session, so read it only and never build there.
 
 ## Build
 ```sh

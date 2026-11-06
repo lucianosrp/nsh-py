@@ -139,7 +139,7 @@ pub(super) fn build(
 ) -> PyResult<AnyElement> {{
     // TODO: this is a plain `view` so the new kind builds and the tests pass.
     // Swap it for the NSH builder you want to wrap. NSH's source matches our
-    // pin: ~/.cargo/registry/src/index.crates.io-*/nsh-core-0.3.0/src/element/host.rs
+    // pin: ~/.cargo/registry/src/index.crates.io-*/nsh-core-0.4.0/src/element/host.rs
     let mut el = props::common(view(), props)?;
     for child in tree::children(py, children)? {{
         el = el.child(child);

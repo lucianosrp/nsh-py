@@ -137,7 +137,7 @@ def test_card_shows_title():
 
 - Be kind. Ask early: mentors would rather unblock you in five minutes than
   find out after an hour.
-- Don't bump the NSH version pins (`=0.3.0`) in a sprint PR. Bumps are
+- Don't bump the NSH version pins (`=0.4.0`) in a sprint PR. Bumps are
   deliberate, one PR each.
 - Never add the crates.io crate called `nsh`: it's an unrelated shell. NSH's
   crates are `nsh-core`, `nsh-base` and so on.

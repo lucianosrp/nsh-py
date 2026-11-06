@@ -20,7 +20,7 @@ body:
     id: nsh
     attributes:
       label: The NSH builder it wraps
-      description: The function or type in nsh-core 0.3.0, if you know it.
+      description: The function or type in nsh-core 0.4.0, if you know it.
   - type: textarea
     id: notes
     attributes:
