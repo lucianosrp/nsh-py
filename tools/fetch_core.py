@@ -196,7 +196,7 @@ def load_source_hash() -> str:
     return mod.source_hash(REPO_ROOT)
 
 
-def run(base_url: str, force: bool, dry_run: bool) -> int:
+def run(base_url: str, force: bool, dry_run: bool, require_match: bool = False) -> int:
     base_url = base_url.rstrip("/")
     key = platform_key()
     print(f"Platform: {key}")
@@ -223,6 +223,11 @@ def run(base_url: str, force: bool, dry_run: bool) -> int:
     local_hash = load_source_hash()
     if local_hash == manifest["source_hash"]:
         print("Rust sources match the prebuilt core.")
+    elif require_match:
+        raise FetchError(
+            f"your checkout's Rust differs from the prebuilt core (commit {short}), "
+            "and --require-match was given."
+        )
     else:
         print(
             f"\nWarning: your checkout's Rust differs from the prebuilt core (commit {short}).\n"
@@ -259,13 +264,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--force", action="store_true", help="fetch again even if current")
     parser.add_argument("--dry-run", action="store_true", help="show what would happen")
     parser.add_argument(
+        "--require-match",
+        action="store_true",
+        help="fail instead of warning when the checkout's Rust differs from the core (CI)",
+    )
+    parser.add_argument(
         "--base-url",
         default=os.environ.get(URL_ENV, DEFAULT_BASE_URL),
         help=f"where manifest.json and the wheels are (env {URL_ENV})",
     )
     args = parser.parse_args(argv)
     try:
-        return run(args.base_url, args.force, args.dry_run)
+        return run(args.base_url, args.force, args.dry_run, args.require_match)
     except FetchError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

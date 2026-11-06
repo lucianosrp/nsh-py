@@ -18,38 +18,73 @@ env:
   # Keep in sync with rust-toolchain.toml (the pin is bumped deliberately).
   RUST_TOOLCHAIN: "1.99.1"
 
+# How much a change needs (.github/scripts/ci_plan.py): `docs` (only docs
+# changed: nothing to do), `prebuilt` (the Rust is identical to the dev-core
+# release: test on its prebuilt core, no Rust build) or `build` (the rest,
+# and whenever in doubt). Jobs always run and skip steps instead of being
+# skipped, so the required checks always report under their usual names.
 jobs:
-  lint:
-    name: Lint (fmt + clippy)
+  plan:
+    name: Plan
     runs-on: ubuntu-24.04
+    outputs:
+      mode: ${{ steps.plan.outputs.mode }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0  # to diff against the base branch
+
+      - name: Docs, prebuilt core or full build?
+        id: plan
+        run: python3 .github/scripts/ci_plan.py
+
+  lint:
+    name: Lint (fmt + clippy)
+    needs: plan
+    runs-on: ubuntu-24.04
+    env:
+      MODE: ${{ needs.plan.outputs.mode || 'build' }}
+    steps:
+      - name: Nothing to lint
+        if: env.MODE != 'build'
+        run: echo "CI mode ${MODE} - the Rust is unchanged, so fmt and clippy are skipped."
+
+      - uses: actions/checkout@v7
+        if: env.MODE == 'build'
 
       - name: Install system dependencies
+        if: env.MODE == 'build'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential pkg-config clang libclang-dev libgtk-4-dev
 
       - name: Install Rust ${{ env.RUST_TOOLCHAIN }}
+        if: env.MODE == 'build'
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
           components: clippy, rustfmt
 
       - uses: Swatinem/rust-cache@v2
+        if: env.MODE == 'build'
         with:
           key: lint
 
       - name: cargo fmt --check
+        if: env.MODE == 'build'
         run: cargo fmt --check
 
       - name: cargo clippy
+        if: env.MODE == 'build'
         run: cargo clippy -- -D warnings
 
   build:
     name: Build + import (${{ matrix.os }}, py${{ matrix.python-version }})
+    needs: plan
     runs-on: ${{ matrix.os }}
+    env:
+      MODE: ${{ needs.plan.outputs.mode || 'build' }}
     strategy:
       fail-fast: false
       matrix:
@@ -71,42 +106,66 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: Nothing to test
+        if: env.MODE == 'docs'
+        run: echo "CI mode docs - only docs changed, so nothing is built or tested."
+
       - uses: actions/checkout@v7
+        if: env.MODE != 'docs'
 
       - name: Install system dependencies (Linux)
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && env.MODE == 'build'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential pkg-config clang libclang-dev libgtk-4-dev
 
+      # The prebuilt core needs GTK's runtime only, no compiler or dev packages.
+      - name: Install the GTK runtime (Linux, prebuilt core)
+        if: runner.os == 'Linux' && env.MODE == 'prebuilt'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgtk-4-1
+
       - name: Locate libclang (Windows)
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && env.MODE == 'build'
         # LLVM is preinstalled on windows-latest; bindgen needs LIBCLANG_PATH.
         run: |
           echo "LIBCLANG_PATH=C:\\Program Files\\LLVM\\bin" >> "$GITHUB_ENV"
           ls "/c/Program Files/LLVM/bin" | grep -i libclang || echo "::warning::libclang.dll not found in the default LLVM dir"
 
       - name: Install Rust ${{ env.RUST_TOOLCHAIN }}
+        if: env.MODE == 'build'
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
 
       - uses: Swatinem/rust-cache@v2
+        if: env.MODE == 'build'
         with:
           key: ${{ matrix.artifact }}
 
       - uses: actions/setup-python@v7
+        if: env.MODE != 'docs'
         with:
           python-version: ${{ matrix.python-version }}
 
+      # tests/conftest.py imports the checkout's python/nsh once it holds a core.
+      - name: Fetch the prebuilt core (no Rust build)
+        if: env.MODE == 'prebuilt'
+        run: |
+          python tools/fetch_core.py --require-match
+          python -m pip install pytest pandas
+
       - name: Build wheel
+        if: env.MODE == 'build'
         run: |
           python -m pip install --upgrade pip
           python -m pip install "maturin>=1.16,<2" pytest pandas
           maturin build --release -o dist
 
       - name: Install wheel and import
+        if: env.MODE == 'build'
         run: |
           python -m pip install --no-index --find-links dist nsh-py
           cd "$RUNNER_TEMP"
@@ -114,9 +173,11 @@ jobs:
 
       # Headless (nsh-testing): no display, no xvfb.
       - name: Run tests
+        if: env.MODE != 'docs'
         run: python -m pytest -q tests
 
       - uses: actions/upload-artifact@v7
+        if: env.MODE == 'build'
         with:
           name: wheels-${{ matrix.artifact }}
           path: dist/*.whl

@@ -259,3 +259,52 @@ def test_dev_core_manifest_collects_wheels(tmp_path):
     assert fetch_core.parse_manifest((out / "manifest.json").read_text()) == manifest
     assert manifest["wheels"]["windows-x86_64"].endswith("win_amd64.whl")
     assert (out / "nsh_py-0.0.1-cp310-abi3-linux_x86_64.whl").is_file()
+
+
+def test_fetch_core_require_match_refuses_a_different_core(tmp_path):
+    manifest = {
+        "commit": "c" * 40,
+        "source_hash": "0" * 64,  # not this checkout's Rust
+        "wheels": {fetch_core.platform_key(): "nsh_py-0.0.1-cp310-abi3-any.whl"},
+    }
+    (tmp_path / "manifest.json").write_text(json.dumps(manifest))
+    with pytest.raises(fetch_core.FetchError, match="--require-match"):
+        fetch_core.run(tmp_path.as_uri(), force=True, dry_run=True, require_match=True)
+
+
+# --- .github/scripts/ci_plan.py (used by ci.yml) ---------------------------
+
+
+def _ci_plan(monkeypatch, files, remote_hash="local"):
+    path = ROOT / ".github" / "scripts" / "ci_plan.py"
+    spec = importlib.util.spec_from_file_location("nsh_ci_plan", path)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    monkeypatch.setattr(mod, "changed_files", lambda base: files)
+    monkeypatch.setattr(mod, "prebuilt_hash", lambda url: remote_hash)
+    monkeypatch.setattr(mod, "source_hash", lambda root: "local")
+    return mod
+
+
+@pytest.mark.parametrize(
+    ("files", "remote", "mode"),
+    [
+        (["README.md", "docs/images/poll.png", ".github/ISSUE_TEMPLATE/bug.yml"], "local", "docs"),
+        (["python/nsh/components/card.py", "tests/test_x.py", "README.md"], "local", "prebuilt"),
+        (["examples/poll.py"], "local", "prebuilt"),
+        (["examples/poll.py"], "older", "build"),  # dev-core is behind or differs
+        (["examples/poll.py"], None, "build"),  # dev-core unreachable
+        (["src/app.rs"], "older", "build"),
+        ([".github/workflows/ci.yml"], "local", "build"),
+        (["pyproject.toml"], "local", "build"),
+    ],
+)
+def test_ci_plan_modes(monkeypatch, files, remote, mode):
+    mod = _ci_plan(monkeypatch, files, remote)
+    assert mod.plan("pull_request", "main", "unused")[0] == mode
+
+
+def test_ci_plan_always_builds_outside_pull_requests(monkeypatch):
+    mod = _ci_plan(monkeypatch, ["README.md"])
+    assert mod.plan("push", "", "unused")[0] == "build"
