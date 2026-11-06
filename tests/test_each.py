@@ -116,9 +116,9 @@ def test_row_local_signal_survives_a_sibling_insert():
     with open(App) as app:
         app.press("id:row2")
         app.press("id:row2")
-        app.wait_for("b: 2")
+        app.wait_for("text:b: 2")
         app.press("insert")
-        app.wait_for("new: 0")
+        app.wait_for("text:new: 0")
         assert app.shows("b: 2")
         assert app.texts()[:3] == ["a: 0", "new: 0", "b: 2"]
 

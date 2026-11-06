@@ -12,6 +12,9 @@ The app runs on NSH's engine thread with no display (nsh-testing's
 headless driver), exactly as it would in a window. Selectors: a bare
 string matches a test id, then a label, then a text; or be explicit with
 `"id:inc"`, `"text:+1"`, `"text:/regex/i"`, `"role:button[Save]"`.
+Text that starts with a lowercase word and a colon (`"b: 2"`,
+`"total: 3"`) reads as a prefix, so write `"text:b: 2"`. `"Total: 3"`
+is fine as it is.
 """
 
 from __future__ import annotations
@@ -53,7 +56,7 @@ class App:
         return self._app.texts()
 
     def shows(self, text: str) -> bool:
-        """Whether `text` shows."""
+        """Whether `text` shows. Plain text, not a selector: no prefixes."""
         return self._app.shows(text)
 
     def scroll(self, selector: str, distance: float) -> None:
