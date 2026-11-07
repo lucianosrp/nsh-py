@@ -69,7 +69,7 @@ select = ["E", "W", "F", "I", "UP", "B", "A"]
 [tool.ruff.lint.per-file-ignores]
 # `nsh.input` and `nsh.testing.open` are public names on purpose.
 "**/__init__.py" = ["A004"]
-"tests/**" = ["A004", "E501"]
+"tests/**" = ["A002", "A004", "E501"]
 "examples/**" = ["A002", "E501"]
 
 [tool.ruff.lint.isort]

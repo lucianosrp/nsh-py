@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 Child = Union["Element", str, None, Callable[[], Any], list, tuple, "Each[Any]"]
 """A child: an element, a string (a text), None, a list, a callable, or `nsh.each`."""
 
-StrProp = Union[str, Callable[[], Any]]
+StrProp = str | Callable[[], Any]
 """A string, or a callable returning one (a binding)."""
 
 Handler = Callable[[], Any]

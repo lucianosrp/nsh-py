@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from nsh._element import Element, Handler, StrProp, merge_class, props
-from nsh.primitives.view import KIND as VIEW
 from nsh.primitives import text
+from nsh.primitives.view import KIND as VIEW
 
 CLASS = (
     "flex-row items-center justify-center px-4 py-2 rounded-md bg-primary "
