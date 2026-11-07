@@ -25,7 +25,9 @@ from nsh import _core
 class App:
     """A running headless app. Use it as a context manager, or `close()`."""
 
-    def __init__(self, root: Callable[[], Any] | Any = None, *, size: tuple[float, float] = (390, 844)):
+    def __init__(
+        self, root: Callable[[], Any] | Any = None, *, size: tuple[float, float] = (390, 844)
+    ):
         self._app = _core.Headless(root, size=size)
 
     def press(self, selector: str) -> None:

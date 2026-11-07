@@ -139,7 +139,11 @@ def _parts(data: Any, o: _Options) -> list[Child]:
     """The root's children: header, body rows and a footer."""
     labels, rows, total, n_index = _read(data, o.columns, o.index, o.max_rows)
     names = [str(label) for label in labels]
-    numeric = [_is_numeric_column(col) for col in zip(*rows, strict=False)] if rows else [False] * len(labels)
+    numeric = (
+        [_is_numeric_column(col) for col in zip(*rows, strict=False)]
+        if rows
+        else [False] * len(labels)
+    )
     formats = [_formatter(o.format, label) for label in labels]
     given = o.widths or {}
     widths = [
@@ -159,7 +163,10 @@ def _parts(data: Any, o: _Options) -> list[Child]:
     if o.header and labels:
         out.append(
             view(
-                *(text(name, class_=cell_class(HEADER_CELL_CLASS, c)) for c, name in enumerate(names)),
+                *(
+                    text(name, class_=cell_class(HEADER_CELL_CLASS, c))
+                    for c, name in enumerate(names)
+                ),
                 class_=HEADER_ROW_CLASS,
                 test_id=o.part_id("header"),
             )
@@ -173,7 +180,9 @@ def _parts(data: Any, o: _Options) -> list[Child]:
         out.append(
             view(
                 *(
-                    text(_cell_text(value, formats[c]), class_=cell_class(CELL_CLASS, c, INDEX_CLASS))
+                    text(
+                        _cell_text(value, formats[c]), class_=cell_class(CELL_CLASS, c, INDEX_CLASS)
+                    )
                     for c, value in enumerate(row)
                 ),
                 class_=row_class,
@@ -244,16 +253,22 @@ def _read(
     return labels, rows, total, n_index
 
 
-def _read_python(data: Any, columns: Sequence[Any] | None) -> tuple[list[Any], list[list[Any]], bool]:
+def _read_python(
+    data: Any, columns: Sequence[Any] | None
+) -> tuple[list[Any], list[list[Any]], bool]:
     """Labels and rows of plain Python data. The last item is False when
     `columns` was used to name plain-list columns (so not to select again)."""
     if isinstance(data, (str, bytes)):
-        raise TypeError(f"nsh.table can't show a {type(data).__name__}; give it rows or a DataFrame")
+        raise TypeError(
+            f"nsh.table can't show a {type(data).__name__}; give it rows or a DataFrame"
+        )
     if isinstance(data, Mapping):  # a dict of lists
         try:
             cols = [list(v) for v in data.values()]
         except TypeError:
-            raise TypeError("nsh.table: a dict must map each column name to a list of values") from None
+            raise TypeError(
+                "nsh.table: a dict must map each column name to a list of values"
+            ) from None
         if len({len(c) for c in cols}) > 1:
             raise ValueError("nsh.table: the lists of a dict must have the same length")
         return list(data.keys()), [list(r) for r in zip(*cols, strict=True)], True
@@ -302,7 +317,11 @@ def _select(labels: list[Any], rows: list[list[Any]], columns: Sequence[Any], n_
 
 def _is_default_index(idx: Any) -> bool:
     """A `RangeIndex` from 0 by 1: what a fresh DataFrame has (checked without pandas)."""
-    return type(idx).__name__ == "RangeIndex" and getattr(idx, "start", None) == 0 and getattr(idx, "step", None) == 1
+    return (
+        type(idx).__name__ == "RangeIndex"
+        and getattr(idx, "start", None) == 0
+        and getattr(idx, "step", None) == 1
+    )
 
 
 # --- formatting -------------------------------------------------------------
@@ -313,7 +332,9 @@ def _is_missing(value: Any) -> bool:
         return True
     if isinstance(value, float):
         return math.isnan(value)
-    if isinstance(value, numbers.Real) and not isinstance(value, numbers.Integral):  # np.float32 and the like
+    if isinstance(value, numbers.Real) and not isinstance(
+        value, numbers.Integral
+    ):  # np.float32 and the like
         return bool(value != value)
     return type(value).__name__ in _MISSING_TYPES
 

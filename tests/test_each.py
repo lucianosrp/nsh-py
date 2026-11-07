@@ -82,7 +82,9 @@ def test_removed_keys_go():
         items = nsh.signal([1, 2, 3])
         return nsh.view(
             nsh.each(items, lambda n: nsh.text(f"row {n}")),
-            nsh.button("drop 2", on_press=lambda: items.update(lambda xs: [x for x in xs if x != 2])),
+            nsh.button(
+                "drop 2", on_press=lambda: items.update(lambda xs: [x for x in xs if x != 2])
+            ),
             nsh.button("clear", on_press=items.setter([])),
         )
 
@@ -106,7 +108,9 @@ def test_row_local_signal_survives_a_sibling_insert():
         items = nsh.signal([todo(1, "a"), todo(2, "b")])
         return nsh.view(
             nsh.each(items, Row, key=lambda t: t["id"]),
-            nsh.button("insert", on_press=lambda: items.update(lambda xs: [xs[0], todo(9, "new"), *xs[1:]])),
+            nsh.button(
+                "insert", on_press=lambda: items.update(lambda xs: [xs[0], todo(9, "new"), *xs[1:]])
+            ),
         )
 
     with open(App) as app:
@@ -130,7 +134,9 @@ def test_changed_item_under_a_key_renders_its_row_again():
         items = nsh.signal([todo(1, "a"), todo(2, "b")])
 
         def toggle_b():
-            items.update(lambda xs: [{**x, "done": not x["done"]} if x["id"] == 2 else x for x in xs])
+            items.update(
+                lambda xs: [{**x, "done": not x["done"]} if x["id"] == 2 else x for x in xs]
+            )
 
         return nsh.view(
             nsh.each(items, render, key=lambda t: t["id"]),
@@ -172,7 +178,10 @@ def test_computed_items():
         open_items = nsh.computed(lambda: [t for t in items() if not t["done"]])
         return nsh.view(
             nsh.each(open_items, lambda t: nsh.text(t["title"]), key=lambda t: t["id"]),
-            nsh.button("finish a", on_press=lambda: items.update(lambda xs: [{**x, "done": True} for x in xs])),
+            nsh.button(
+                "finish a",
+                on_press=lambda: items.update(lambda xs: [{**x, "done": True} for x in xs]),
+            ),
         )
 
     with open(App) as app:
@@ -240,15 +249,23 @@ def test_exceptions_are_logged_and_the_app_survives(caplog):
         app.press("fix")
         app.press("add 5")
         app.wait_for("row 5")
-        assert [t for t in app.texts() if t.startswith("row")] == ["row 1", "row 2", "row 4", "row 5"]
+        assert [t for t in app.texts() if t.startswith("row")] == [
+            "row 1",
+            "row 2",
+            "row 4",
+            "row 5",
+        ]
     errors = [type(r.exc_info[1]) for r in caplog.records if r.exc_info]
     assert ValueError in errors and KeyError in errors and RuntimeError in errors
 
 
 def test_unhashable_key_is_reported(caplog):
-    with caplog.at_level(logging.ERROR, logger="nsh"), open(
-        lambda: nsh.view(nsh.each([1], lambda n: nsh.text(f"row {n}"), key=lambda n: [n]))
-    ) as app:
+    with (
+        caplog.at_level(logging.ERROR, logger="nsh"),
+        open(
+            lambda: nsh.view(nsh.each([1], lambda n: nsh.text(f"row {n}"), key=lambda n: [n]))
+        ) as app,
+    ):
         assert app.shows("row 1")
     assert "key must be hashable" in caplog.text
 

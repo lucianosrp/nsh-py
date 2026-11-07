@@ -48,17 +48,14 @@ _COLOR = {
 }
 _RESET = "\033[0m"
 
-_CHANNEL_RE = re.compile(
-    r"""(?m)^\s*channel\s*=\s*["']([^"']+)["']"""
-)
+_CHANNEL_RE = re.compile(r"""(?m)^\s*channel\s*=\s*["']([^"']+)["']""")
 _OS_RELEASE_PATHS = ("/etc/os-release", "/usr/lib/os-release")
 
 APT_HINT = "sudo apt install clang libclang-dev libgtk-4-dev pkg-config"
 DNF_HINT = "sudo dnf install clang clang-devel gtk4-devel pkgconf-pkg-config"
 PACMAN_HINT = "sudo pacman -S clang gtk4 pkgconf"
 TOO_OLD_RELEASES = (
-    "Ubuntu 22.04 and Debian 12 are too old "
-    "(Ubuntu 24.04+, Debian 13, Fedora 40+, Arch work)."
+    "Ubuntu 22.04 and Debian 12 are too old (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch work)."
 )
 UV_URL = "https://docs.astral.sh/uv/"
 RUSTUP_URL = "https://rustup.rs"
@@ -183,11 +180,7 @@ def linux_install_hint(info: dict[str, str] | None = None) -> str:
         return DNF_HINT
     if family == "pacman":
         return PACMAN_HINT
-    return (
-        f"Debian/Ubuntu: {APT_HINT}\n"
-        f"Fedora: {DNF_HINT}\n"
-        f"Arch: {PACMAN_HINT}"
-    )
+    return f"Debian/Ubuntu: {APT_HINT}\nFedora: {DNF_HINT}\nArch: {PACMAN_HINT}"
 
 
 def summarize(results: Sequence[Result]) -> tuple[str, int]:
@@ -303,10 +296,7 @@ def _rustup_hint() -> str:
             r"%USERPROFILE%\.cargo\bin"
         )
     else:
-        path_note = (
-            "If you just installed it, open a new terminal so PATH includes "
-            "~/.cargo/bin"
-        )
+        path_note = "If you just installed it, open a new terminal so PATH includes ~/.cargo/bin"
     return f"Install Rust from {RUSTUP_URL}\n{path_note}"
 
 
@@ -421,9 +411,7 @@ def check_rust_toolchain() -> Result:
             WARN,
             f"{TOOLCHAIN_TOML.name} not found in the repo root",
         )
-    channel = parse_toolchain_channel(
-        TOOLCHAIN_TOML.read_text(encoding="utf-8")
-    )
+    channel = parse_toolchain_channel(TOOLCHAIN_TOML.read_text(encoding="utf-8"))
     rustup = shutil.which("rustup")
     if not rustup:
         return Result(
@@ -449,8 +437,7 @@ def check_rust_toolchain() -> Result:
         "Rust toolchain",
         WARN,
         f"{channel} is not installed yet",
-        f"That's fine: rustup installs {channel} on the first build "
-        "(from rust-toolchain.toml).",
+        f"That's fine: rustup installs {channel} on the first build (from rust-toolchain.toml).",
     )
 
 
@@ -530,9 +517,7 @@ def check_glibc() -> Result:
             "glibc",
             FAIL,
             "GNU libc not detected",
-            _with_old_distro(
-                "Need glibc 2.39+ (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch)."
-            ),
+            _with_old_distro("Need glibc 2.39+ (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch)."),
         )
     got = parse_version(raw)
     shown = ".".join(str(p) for p in got)
@@ -542,9 +527,7 @@ def check_glibc() -> Result:
         "glibc",
         FAIL,
         f"{shown} is too old (need >= 2.39)",
-        _with_old_distro(
-            "Need glibc 2.39+ (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch)."
-        ),
+        _with_old_distro("Need glibc 2.39+ (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch)."),
     )
 
 
@@ -583,8 +566,7 @@ def check_gtk4() -> Result:
             f"{missing} missing (runtime found at {runtime})",
             _with_old_distro(
                 "The GTK 4 runtime is installed, but headers are not. "
-                "Install the -dev package so pkg-config can find gtk4.\n"
-                + pkgs
+                "Install the -dev package so pkg-config can find gtk4.\n" + pkgs
             ),
         )
     why = "pkg-config not found" if not pkg else "pkg-config did not find gtk4"
@@ -709,12 +691,7 @@ def _vswhere_path() -> Path:
     pf86 = os.environ.get("ProgramFiles(x86)")
     if not pf86:
         pf86 = os.environ.get("ProgramFiles", r"C:\Program Files")
-    return (
-        Path(pf86)
-        / "Microsoft Visual Studio"
-        / "Installer"
-        / "vswhere.exe"
-    )
+    return Path(pf86) / "Microsoft Visual Studio" / "Installer" / "vswhere.exe"
 
 
 def check_msvc() -> Result:

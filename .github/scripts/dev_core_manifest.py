@@ -39,9 +39,7 @@ def build_manifest(wheels_dir: Path, out_dir: Path, commit: str, digest: str) ->
     if not wheels:
         raise SystemExit(f"no wheels-* folders in {wheels_dir}")
     manifest = {"commit": commit, "source_hash": digest, "wheels": wheels}
-    (out_dir / "manifest.json").write_text(
-        json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
-    )
+    (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     return manifest
 
 

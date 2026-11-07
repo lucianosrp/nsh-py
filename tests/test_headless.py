@@ -215,7 +215,11 @@ def test_dataframe_example():
         app.press("Sort by units")  # handlers run in order, so this sees 9 rows
         assert summary(app).startswith("9 sales,")
         texts = app.texts()
-        units = [int(texts[i + 2]) for i, t in enumerate(texts) if t in {"North", "South", "East", "West"}]
+        units = [
+            int(texts[i + 2])
+            for i, t in enumerate(texts)
+            if t in {"North", "South", "East", "West"}
+        ]
         assert units == sorted(units, reverse=True) and len(units) == 9
 
 

@@ -14,7 +14,8 @@ def TodoRow(todo, toggle, remove):
     return nsh.view(
         nsh.text(
             ("✓ " if done else "") + todo["title"],
-            class_="flex-1 " + ("text-muted-foreground line-through" if done else "text-foreground"),
+            class_="flex-1 "
+            + ("text-muted-foreground line-through" if done else "text-foreground"),
             on_press=lambda: toggle(todo["id"]),
             test_id=f"toggle-{todo['id']}",
         ),
@@ -49,7 +50,9 @@ def TodoApp():
     return nsh.view(
         nsh.text("To do", class_="text-2xl font-bold text-foreground"),
         nsh.each(todos, lambda t: TodoRow(t, toggle, remove), key=lambda t: t["id"]),
-        nsh.text(lambda: f"{left()} of {len(todos())} left", class_="text-sm text-muted-foreground"),
+        nsh.text(
+            lambda: f"{left()} of {len(todos())} left", class_="text-sm text-muted-foreground"
+        ),
         nsh.button("Add", on_press=add, test_id="add"),
         class_="flex-1 gap-3 p-8",
     )
