@@ -54,6 +54,11 @@ class App:
         """Whether `text` shows."""
         return self._app.shows(text)
 
+    def scroll(self, selector: str, distance: float) -> None:
+        """Scroll the scroll view `selector` names by `distance` points
+        along its axis (negative: back), then wait for the app to settle."""
+        self._app.scroll(selector, distance)
+
     def close(self) -> None:
         """Stop the app's engine."""
         self._app.close()

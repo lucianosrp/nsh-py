@@ -9,6 +9,7 @@ use nsh_core::prelude::*;
 use pyo3::{prelude::*, types::PyDict};
 
 mod input;
+mod scroll;
 mod text;
 mod view;
 
@@ -19,6 +20,7 @@ pub(crate) type Build =
 /// Every kind, by the name Python's `Element.kind` uses.
 const KINDS: &[(&str, Build)] = &[
     ("input", input::build),
+    ("scroll", scroll::build),
     ("text", text::build),
     ("view", view::build),
 ];
