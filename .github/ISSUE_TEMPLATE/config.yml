@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Read the sprint guide first
+    url: https://github.com/lucianosrp/nsh-py/blob/main/SPRINT.md
+    about: Setup, tracks and the PR checklist.
