@@ -55,8 +55,12 @@ def App():
             class_="flex-row gap-2",
         ),
         # `sales` is a signal, so the table is made again when it changes.
-        nsh.table(sales, max_rows=12, format={"price": "${:.2f}", "revenue": "${:,.2f}"}),
-        class_="p-6 gap-4",
+        # The scroll lets it grow past the window.
+        nsh.scroll(
+            nsh.table(sales, format={"price": "${:.2f}", "revenue": "${:,.2f}"}),
+            class_="flex-1",
+        ),
+        class_="flex-1 p-6 gap-4",
     )
 
 
