@@ -32,6 +32,16 @@ class App:
         """Press what `selector` finds, then wait for the app to settle."""
         self._app.press(selector)
 
+    def type_text(self, selector: str, text: str) -> None:
+        """Type `text` at the end of the input `selector` finds, key by key,
+        then wait for the app to settle. A `"\\n"` is the Enter key (it
+        submits)."""
+        self._app.type_text(selector, text)
+
+    def value(self, selector: str) -> str | None:
+        """The text the input `selector` finds holds (`None`: no such input)."""
+        return self._app.value(selector)
+
     def wait_for(self, selector: str, timeout: float = 5.0) -> None:
         """Wait until `selector` shows; `TimeoutError` after `timeout` s."""
         self._app.wait_for(selector, timeout)

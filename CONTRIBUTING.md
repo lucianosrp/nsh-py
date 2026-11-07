@@ -165,10 +165,12 @@ Then open a PR with a screenshot (SPRINT.md has the checklist).
 
 ## Walkthrough B: add a primitive (Python + Rust)
 
-A primitive is a new element kind. We'll use `input`, a text field. **This
-is a sketch to show the shape of the work.** `input` is not implemented in
-this repo and the Rust below has not been compiled, so check each call
-against NSH's source, which matches our pin:
+A primitive is a new element kind. We'll use `input`, a text field. The
+finished code is in the repo (`src/elements/input.rs`,
+`python/nsh/primitives/input.py`, `tests/primitives/test_input.py`,
+`examples/form.py`); the snippets below are simplified (the real `input`
+also takes `disabled`, and a signal as `value`). To check a call against
+NSH's source, which matches our pin:
 `~/.cargo/registry/src/index.crates.io-*/nsh-core-0.3.0/src/element/host.rs`
 (`pub fn input`, `impl Input`; on Windows, `%USERPROFILE%\.cargo\registry\src\`).
 
@@ -293,13 +295,15 @@ def test_input_is_controlled():
         )
 
     with open(App) as app:
-        app.type_text("id:name", "Ada")  # not in nsh.testing yet, see below
+        app.type_text("id:name", "Ada")
         app.wait_for("Hello, Ada")
 ```
 
-`nsh.testing.App` has no `type_text` yet, although nsh-testing's driver
-does. Add it in the same PR: a method next to `press` in `src/headless.rs`
-and a thin one in `python/nsh/testing.py`.
+`type_text` is in `nsh.testing.App` (a method next to `press` in
+`src/headless.rs`, and a thin one in `python/nsh/testing.py`): a `"\n"` in
+the text is the Enter key, and `app.value("id:name")` reads what an input
+holds. If your primitive needs another nsh-testing driver call, add it the
+same way in the same PR.
 
 ### 6. Build and check
 

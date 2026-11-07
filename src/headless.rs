@@ -102,6 +102,30 @@ impl Headless {
         })
     }
 
+    /// Types `text` at the end of the input `selector` finds, key by key,
+    /// as a keyboard does (`"\n"` is the return key: it submits), and waits
+    /// until the app settles.
+    fn type_text(&self, py: Python<'_>, selector: String, text: String) -> PyResult<()> {
+        self.with(py, |d| {
+            d.type_text(&selector, &text)
+                .map_err(PyRuntimeError::new_err)?;
+            d.settle();
+            Ok(())
+        })
+    }
+
+    /// The text an input holds (`selector` finds the input), or `None` if
+    /// no input matches.
+    fn value(&self, py: Python<'_>, selector: String) -> PyResult<Option<String>> {
+        self.with(py, |d| {
+            d.catch_up();
+            let value = d.screen().input_text(&selector);
+            value
+                .map(|v| v.map(str::to_owned))
+                .map_err(PyRuntimeError::new_err)
+        })
+    }
+
     /// Stops the engine (joining its thread).
     fn close(&self, py: Python<'_>) {
         py.detach(|| {

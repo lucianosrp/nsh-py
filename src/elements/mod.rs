@@ -8,6 +8,7 @@
 use nsh_core::prelude::*;
 use pyo3::{prelude::*, types::PyDict};
 
+mod input;
 mod text;
 mod view;
 
@@ -16,7 +17,11 @@ pub(crate) type Build =
     fn(Python<'_>, &Bound<'_, PyDict>, &Bound<'_, PyAny>) -> PyResult<AnyElement>;
 
 /// Every kind, by the name Python's `Element.kind` uses.
-const KINDS: &[(&str, Build)] = &[("text", text::build), ("view", view::build)];
+const KINDS: &[(&str, Build)] = &[
+    ("input", input::build),
+    ("text", text::build),
+    ("view", view::build),
+];
 
 /// The builder of `kind`.
 pub(crate) fn builder(kind: &str) -> Option<Build> {

@@ -217,3 +217,18 @@ def test_dataframe_example():
         texts = app.texts()
         units = [int(texts[i + 2]) for i, t in enumerate(texts) if t in {"North", "South", "East", "West"}]
         assert units == sorted(units, reverse=True) and len(units) == 9
+
+
+def test_form_example():
+    Form = load_example("form")["Form"]
+    with open(Form) as app:
+        app.type_text("id:name", "Ada")
+        app.wait_for("Hello, Ada")
+        app.type_text("id:email", "ada@example.org\n")
+        app.wait_for("Welcome, Ada! We'll write to ada@example.org.")
+        assert app.value("id:name") == ""
+        assert app.value("id:email") == ""
+        app.type_text("id:name", "Bo")
+        app.press("id:send")  # no email: nothing is sent
+        app.wait_for("Hello, Bo")
+        assert app.shows("Welcome, Ada! We'll write to ada@example.org.")

@@ -58,3 +58,15 @@ pub(crate) fn string(obj: &Bound<'_, PyAny>) -> PyResult<Reactive<SharedString>>
         Ok(Reactive::Static(obj.str()?.to_string().into()))
     }
 }
+
+/// A bool prop: fixed, or bound to a callable (its result's truthiness).
+pub(crate) fn boolean(obj: &Bound<'_, PyAny>) -> PyResult<Reactive<bool>> {
+    if obj.is_callable() {
+        let f = obj.clone().unbind();
+        Ok(Reactive::Bound(Rc::new(move || {
+            bridge::call(|py| f.bind(py).call0()?.is_truthy()).unwrap_or_default()
+        })))
+    } else {
+        Ok(Reactive::Static(obj.is_truthy()?))
+    }
+}
