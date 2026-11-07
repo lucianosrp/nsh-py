@@ -37,7 +37,9 @@ def test_card_with_bound_class():
 
 
 def test_card_shows_title_and_children():
-    with open(lambda: nsh.card(nsh.text("body"), title="Profile", description="Shown to others.")) as app:
+    with open(
+        lambda: nsh.card(nsh.text("body"), title="Profile", description="Shown to others.")
+    ) as app:
         assert app.shows("Profile")
         assert app.shows("Shown to others.")
         assert app.shows("body")

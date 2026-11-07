@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, Union
+from typing import Any
 
 from nsh._element import Element, StrProp, props
 from nsh._signals import Signal
 
 KIND = "input"
 
-BoolProp = Union[bool, Callable[[], Any]]
+BoolProp = bool | Callable[[], Any]
 """A bool, or a callable returning one (a binding)."""
 
 

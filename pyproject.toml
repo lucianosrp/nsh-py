@@ -54,3 +54,23 @@ cache-keys = [
 [tool.pytest.ini_options]
 # Which `nsh` the tests import is decided in tests/conftest.py.
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+extend-exclude = ["python/nsh/.dev-core"]
+
+[tool.ruff.lint]
+# E/W: pycodestyle, F: pyflakes, I: import order, UP: modern syntax,
+# B: likely bugs, A: names that shadow builtins (use `# noqa: A001` when
+# the public name is meant, like `nsh.input`).
+select = ["E", "W", "F", "I", "UP", "B", "A"]
+
+[tool.ruff.lint.per-file-ignores]
+# `nsh.input` and `nsh.testing.open` are public names on purpose.
+"**/__init__.py" = ["A004"]
+"tests/**" = ["A002", "A004", "E501"]
+"examples/**" = ["A002", "E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["nsh"]

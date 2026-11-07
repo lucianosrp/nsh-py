@@ -4,7 +4,6 @@ import gc
 import logging
 import threading
 
-
 import nsh
 from nsh import _core
 from nsh.testing import open

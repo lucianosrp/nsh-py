@@ -6,8 +6,12 @@ from nsh import _core, primitives
 def test_python_primitives_match_rust_kinds():
     rust = set(_core.element_kinds())
     python = set(primitives.KINDS)
-    assert python - rust == set(), "Python primitives with no Rust builder (add src/elements/<kind>.rs)"
-    assert rust - python == set(), "Rust kinds with no Python primitive (add python/nsh/primitives/<kind>.py)"
+    assert python - rust == set(), (
+        "Python primitives with no Rust builder (add src/elements/<kind>.rs)"
+    )
+    assert rust - python == set(), (
+        "Rust kinds with no Python primitive (add python/nsh/primitives/<kind>.py)"
+    )
 
 
 def test_unknown_kind_is_reported(caplog):

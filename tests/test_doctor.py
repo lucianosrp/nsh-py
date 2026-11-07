@@ -55,11 +55,7 @@ def test_version_at_least():
 
 
 def test_parse_toolchain_channel():
-    text = (
-        "[toolchain]\n"
-        'channel = "1.99.1"\n'
-        'components = ["clippy", "rustfmt"]\n'
-    )
+    text = '[toolchain]\nchannel = "1.99.1"\ncomponents = ["clippy", "rustfmt"]\n'
     assert doctor.parse_toolchain_channel(text) == "1.99.1"
     assert doctor.parse_toolchain_channel("channel = 'nightly'") == "nightly"
     commented = '[toolchain]\n# pin\nchannel = "1.99.1"  # keep\n'
@@ -181,9 +177,7 @@ def test_summarize_two_blocking_two_warnings():
 
 
 def test_format_result_tags_and_hint_indent():
-    ok = doctor.format_result(
-        doctor.Result("Python", doctor.OK, "3.12.0 (>= 3.10)"), color=False
-    )
+    ok = doctor.format_result(doctor.Result("Python", doctor.OK, "3.12.0 (>= 3.10)"), color=False)
     assert ok == "[ok] Python: 3.12.0 (>= 3.10)"
     fail = doctor.format_result(
         doctor.Result("git", doctor.FAIL, "not found on PATH", "Install Git"),
@@ -197,13 +191,9 @@ def test_format_result_tags_and_hint_indent():
     )
     assert warn.startswith("[--] uv:")
     assert "\n     Install uv" in warn
-    colored = doctor.format_result(
-        doctor.Result("x", doctor.OK, "yes"), color=True
-    )
+    colored = doctor.format_result(doctor.Result("x", doctor.OK, "yes"), color=True)
     assert "\033[" in colored
-    plain = doctor.format_result(
-        doctor.Result("x", doctor.FAIL, "no", "hint"), color=False
-    )
+    plain = doctor.format_result(doctor.Result("x", doctor.FAIL, "no", "hint"), color=False)
     assert "\033[" not in plain
 
 
@@ -211,9 +201,7 @@ def test_pick_python_executable():
     assert doctor.is_python_binary("/usr/bin/python3")
     assert doctor.is_python_binary("/usr/bin/python3.13")
     assert doctor.is_python_binary(r"C:\Python313\python.exe")
-    assert not doctor.is_python_binary(
-        "/home/me/T3-Code-0.1.6-x86_64.AppImage"
-    )
+    assert not doctor.is_python_binary("/home/me/T3-Code-0.1.6-x86_64.AppImage")
     assert not doctor.is_python_binary("/usr/bin/rustup")
     assert (
         doctor.pick_python_executable(
@@ -224,9 +212,7 @@ def test_pick_python_executable():
         )
         == "/usr/bin/python3"
     )
-    assert doctor.pick_python_executable(["/usr/bin/python3.12"]) == (
-        "/usr/bin/python3.12"
-    )
+    assert doctor.pick_python_executable(["/usr/bin/python3.12"]) == ("/usr/bin/python3.12")
     assert doctor.pick_python_executable([None, ""]) == "python3"
 
 

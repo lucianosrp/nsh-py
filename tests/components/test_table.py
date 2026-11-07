@@ -23,7 +23,9 @@ def header_of(t):
 
 def body_of(t):
     """The cell texts of every body row (rows are the views after the header)."""
-    return [[c.props["content"] for c in row.children] for row in t.children[1:] if row.kind == "view"]
+    return [
+        [c.props["content"] for c in row.children] for row in t.children[1:] if row.kind == "view"
+    ]
 
 
 def has_class(el, name):
@@ -34,7 +36,9 @@ def has_class(el, name):
 
 
 def test_records():
-    t = nsh.table([{"name": "Ada", "age": 36}, {"name": "Bo", "age": 41, "extra": True}], test_id="t")
+    t = nsh.table(
+        [{"name": "Ada", "age": 36}, {"name": "Bo", "age": 41, "extra": True}], test_id="t"
+    )
     assert t.kind == "view"
     assert t.props == {"class_": ROOT_CLASS, "test_id": "t"}
     assert header_of(t) == ["name", "age", "extra"]
@@ -139,7 +143,9 @@ def test_numbers_right_aligned_per_column():
 
 
 def test_default_formatting():
-    t = nsh.table([{"i": 7, "f": 3.14159, "tiny": 0.0001234, "zero": 0.0, "big": 1234567.891, "b": True}])
+    t = nsh.table(
+        [{"i": 7, "f": 3.14159, "tiny": 0.0001234, "zero": 0.0, "big": 1234567.891, "b": True}]
+    )
     assert body_of(t) == [["7", "3.14", "0.000123", "0.00", "1234567.89", "True"]]
 
 
@@ -196,7 +202,9 @@ def test_callable_data_is_a_region():
 
 def test_pandas_dataframe():
     pd = pytest.importorskip("pandas")
-    df = pd.DataFrame({"city": ["Oslo", "Rome", None], "temp": [4.5, 18.25, float("nan")], "n": [1, 2, 3]})
+    df = pd.DataFrame(
+        {"city": ["Oslo", "Rome", None], "temp": [4.5, 18.25, float("nan")], "n": [1, 2, 3]}
+    )
     t = nsh.table(df)
     assert header_of(t) == ["city", "temp", "n"]  # the default RangeIndex is hidden
     assert body_of(t) == [["Oslo", "4.50", "1"], ["Rome", "18.25", "2"], [NA_TEXT, NA_TEXT, "3"]]
@@ -212,7 +220,10 @@ def test_pandas_missing_kinds():
             "ok": [True, False],
         }
     )
-    assert body_of(nsh.table(df)) == [["2024-01-02 00:00:00", "1", "True"], [NA_TEXT, NA_TEXT, "False"]]
+    assert body_of(nsh.table(df)) == [
+        ["2024-01-02 00:00:00", "1", "True"],
+        [NA_TEXT, NA_TEXT, "False"],
+    ]
 
 
 def test_pandas_non_default_index_is_shown():
@@ -233,7 +244,9 @@ def test_pandas_index_true_and_multiindex():
     pd = pytest.importorskip("pandas")
     df = pd.DataFrame({"x": [1, 2]})
     assert body_of(nsh.table(df, index=True)) == [["0", "1"], ["1", "2"]]
-    mi = pd.DataFrame({"x": [1, 2]}, index=pd.MultiIndex.from_tuples([("a", 1), ("a", 2)], names=["g", "i"]))
+    mi = pd.DataFrame(
+        {"x": [1, 2]}, index=pd.MultiIndex.from_tuples([("a", 1), ("a", 2)], names=["g", "i"])
+    )
     t = nsh.table(mi)
     assert header_of(t) == ["g", "i", "x"]
     assert body_of(t) == [["a", "1", "1"], ["a", "2", "2"]]
@@ -286,7 +299,9 @@ def test_polars_dataframe():
 
 
 def test_table_shows_cells():
-    with open(lambda: nsh.table([{"name": "Ada", "score": 9.5}, {"name": "Bo", "score": 7}])) as app:
+    with open(
+        lambda: nsh.table([{"name": "Ada", "score": 9.5}, {"name": "Bo", "score": 7}])
+    ) as app:
         for shown in ("name", "score", "Ada", "9.50", "Bo", "7"):
             assert app.shows(shown)
 
@@ -308,7 +323,9 @@ def test_table_follows_a_signal_of_records():
     def App():
         rows = nsh.signal([{"n": "old"}])
         return nsh.view(
-            nsh.button("Swap", on_press=lambda: rows.set([{"n": "new"}, {"n": "newer"}]), test_id="swap"),
+            nsh.button(
+                "Swap", on_press=lambda: rows.set([{"n": "new"}, {"n": "newer"}]), test_id="swap"
+            ),
             nsh.table(rows),
         )
 
@@ -343,10 +360,14 @@ def test_table_follows_a_dataframe_signal():
         return nsh.view(
             nsh.button(
                 "Swap",
-                on_press=lambda: df.set(pd.DataFrame({"city": ["Rome", "Cairo"], "temp": [18.25, 30.0]})),
+                on_press=lambda: df.set(
+                    pd.DataFrame({"city": ["Rome", "Cairo"], "temp": [18.25, 30.0]})
+                ),
                 test_id="swap",
             ),
-            nsh.button("Add column", on_press=lambda: df.update(lambda d: d.assign(rain=1)), test_id="col"),
+            nsh.button(
+                "Add column", on_press=lambda: df.update(lambda d: d.assign(rain=1)), test_id="col"
+            ),
             nsh.table(df),
         )
 

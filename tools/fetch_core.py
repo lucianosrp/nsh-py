@@ -140,9 +140,7 @@ def extract_core(wheel: Path, dest: Path) -> list[Path]:
 
 def existing_cores(package_dir: Path) -> list[Path]:
     """Extension modules already in *package_dir* (a fetch or a local build)."""
-    return sorted(
-        p for p in package_dir.glob("_core*") if CORE_MEMBER_RE.match(f"nsh/{p.name}")
-    )
+    return sorted(p for p in package_dir.glob("_core*") if CORE_MEMBER_RE.match(f"nsh/{p.name}"))
 
 
 def read_marker(path: Path = MARKER) -> str | None:
@@ -251,8 +249,10 @@ def run(base_url: str, force: bool, dry_run: bool, require_match: bool = False) 
     for path in written:
         print(f"Wrote {path.relative_to(REPO_ROOT).as_posix()}")
     if key.startswith("linux-"):
-        print("Note: the Linux core needs the GTK 4.14+ runtime (no dev packages), "
-              "Ubuntu 24.04+ / Debian 13 / Fedora 40+ / Arch.")
+        print(
+            "Note: the Linux core needs the GTK 4.14+ runtime (no dev packages), "
+            "Ubuntu 24.04+ / Debian 13 / Fedora 40+ / Arch."
+        )
     print("Done. Run the tests: see 'Setup' in SPRINT.md.")
     return 0
 

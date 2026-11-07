@@ -193,11 +193,11 @@ class Signal(_Source[T]):
     def updater(self, fn: Callable[[T], T]) -> Callable[[], None]:
         """A handler that runs `update(fn)`. Use it as a decorator::
 
-            @count.updater
-            def increment(n):
-                return n + 1
+        @count.updater
+        def increment(n):
+            return n + 1
 
-            nsh.button("+1", on_press=increment)
+        nsh.button("+1", on_press=increment)
         """
 
         def handler() -> None:
@@ -208,9 +208,9 @@ class Signal(_Source[T]):
     def mutator(self, fn: Callable[[T], Any]) -> Callable[[], None]:
         """A handler that runs `mutate(fn)`. Use it as a decorator::
 
-            @items.mutator
-            def add_item(xs):
-                xs.append("new")
+        @items.mutator
+        def add_item(xs):
+            xs.append("new")
         """
 
         def handler() -> None:
