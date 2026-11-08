@@ -287,6 +287,8 @@ and what is different.
 - **Two-way binding is Python's.** The component reports the value a
   press asks for (`on_change(True)`) and shows the value it is given.
   `primitives/_toggle.py` turns what the caller passed into both: a
-  signal is two-way (the handler sets it), a callable is one-way, and a
-  bool is the first value of a signal the toggle makes for itself, so
-  `nsh.checkbox(True)` still toggles.
+  signal is two-way (the handler sets it, then calls `on_change`), a
+  callable is one-way and read-only (the handler only calls
+  `on_change`), and a bool is the first value of a signal the toggle
+  makes for itself, so `nsh.checkbox("Remember me", checked=True)` still
+  toggles.

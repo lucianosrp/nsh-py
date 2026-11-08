@@ -9,7 +9,7 @@ from nsh.testing import open
 
 def test_switch_props():
     dark = nsh.signal(False)
-    s = nsh.switch(dark, "Dark mode", class_=lambda: "p-2", test_id="dark")
+    s = nsh.switch("Dark mode", checked=dark, class_=lambda: "p-2", test_id="dark")
     assert s.kind == "switch"
     assert s.props["checked"] is dark
     assert s.props["on_change"] == dark.set
@@ -24,7 +24,7 @@ def test_pressing_toggles_the_signal():
     def App():
         dark = nsh.signal(False)
         return nsh.view(
-            nsh.switch(dark, "Dark mode", test_id="dark"),
+            nsh.switch("Dark mode", checked=dark, test_id="dark"),
             nsh.text(lambda: "on" if dark() else "off"),
             nsh.button("reset", on_press=dark.setter(False)),
         )
@@ -45,7 +45,7 @@ def test_pressing_toggles_the_signal():
 
 def test_a_bool_toggles_by_itself():
     seen = []
-    with open(lambda: nsh.switch(True, on_change=seen.append, test_id="wifi")) as app:
+    with open(lambda: nsh.switch(checked=True, on_change=seen.append, test_id="wifi")) as app:
         app.press("id:wifi")
         app.press("id:wifi")
         app.press("id:wifi")
@@ -54,7 +54,9 @@ def test_a_bool_toggles_by_itself():
 
 def test_disabled_ignores_presses():
     seen = []
-    with open(lambda: nsh.switch(False, "Wi-Fi", on_change=seen.append, disabled=True, test_id="wifi")) as app:
+    with open(
+        lambda: nsh.switch("Wi-Fi", on_change=seen.append, disabled=True, test_id="wifi")
+    ) as app:
         with pytest.raises(RuntimeError, match="disabled"):
             app.press("id:wifi")
         with pytest.raises(RuntimeError, match="disabled"):

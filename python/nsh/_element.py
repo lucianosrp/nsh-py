@@ -27,10 +27,10 @@ Child = Union["Element", str, None, Callable[[], Any], list, tuple, "Each[Any]"]
 StrProp = str | Callable[[], Any]
 """A string, or a callable returning one (a binding)."""
 
-BoolProp = Union[bool, Callable[[], Any]]
+BoolProp = bool | Callable[[], Any]
 """A bool, or a callable returning one (a binding)."""
 
-NumProp = Union[int, float, Callable[[], Any]]
+NumProp = int | float | Callable[[], Any]
 """A number, or a callable returning one (a binding)."""
 
 Handler = Callable[[], Any]

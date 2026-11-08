@@ -21,7 +21,10 @@ def test_progress_props():
     (label,) = p.children
     assert label.props["content"] == "40%"
     assert nsh.progress(0.5, max=1.0).props["max"] == 1.0
-    assert nsh.progress(indeterminate=True).props["indicator_class"] == f"{INDICATOR_CLASS} {INDETERMINATE_CLASS}"
+    assert (
+        nsh.progress(indeterminate=True).props["indicator_class"]
+        == f"{INDICATOR_CLASS} {INDETERMINATE_CLASS}"
+    )
     busy = nsh.signal(False)
     bound = nsh.progress(indeterminate=busy).props["indicator_class"]
     assert bound() == INDICATOR_CLASS

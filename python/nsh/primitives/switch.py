@@ -24,9 +24,9 @@ LABEL_CLASS = "ml-2 text-sm"
 
 
 def switch(
-    checked: BoolProp | None = None,
     label: StrProp | None = None,
     *,
+    checked: BoolProp | None = None,
     on_change: Callable[[bool], Any] | None = None,
     disabled: BoolProp | None = None,
     class_: StrProp | None = None,
@@ -35,17 +35,18 @@ def switch(
     """A switch: an on / off setting that takes effect at once, then `label`.
 
     `checked` works as `nsh.checkbox`'s: a **signal** is two-way (a press
-    sets it, or calls `on_change` instead when given), a **callable** is
-    one-way (a press only calls `on_change`), and a **bool** (or nothing:
-    off) is the first value of a switch that keeps its own value and
-    toggles by itself (`on_change(value)` runs after each press).
+    sets it, then calls `on_change`), a **callable** is one-way and
+    read-only (a press only calls `on_change`), and a **bool** (or
+    nothing: off) is the first value of a switch that keeps its own value
+    and toggles by itself (`on_change(value)` runs after each press).
     `disabled` (a bool or a callable) ignores presses and dims it.
     `class_` takes Tailwind classes for where it sits: they go on a view
     around it, as `nsh.checkbox`'s do.
 
         dark = nsh.signal(False)
-        nsh.switch(dark, "Dark mode", test_id="dark")
+        nsh.switch("Dark mode", checked=dark, test_id="dark")
     """
+    _toggle.check_label("switch", label)
     value, handler = _toggle.state(checked, on_change)
     children: list[Child] = []
     if label is not None:

@@ -29,9 +29,9 @@ DASH = "–"
 
 
 def checkbox(
-    checked: BoolProp | None = None,
     label: StrProp | None = None,
     *,
+    checked: BoolProp | None = None,
     on_change: Callable[[bool], Any] | None = None,
     disabled: BoolProp | None = None,
     indeterminate: BoolProp | None = None,
@@ -42,11 +42,11 @@ def checkbox(
 
     `checked` is its value:
 
-    - a **signal**: two-way. The box shows it, and a press sets it (unless
-      `on_change` is given: then `on_change(value)` runs instead and it's
-      up to you to set the signal);
-    - a **callable** (lambda, computed): one-way. The box shows what it
-      returns; a press only calls `on_change`;
+    - a **signal**: two-way. The box shows it, and a press sets it, then
+      calls `on_change(value)` if given;
+    - a **callable** (lambda, computed): one-way and read-only. The box
+      shows what it returns; a press only calls `on_change(value)`, and
+      it's up to you to change what the callable reads;
     - a **bool** (or nothing: unchecked): the first value. The checkbox
       keeps its own value and toggles by itself; `on_change(value)` runs
       after each press.
@@ -60,10 +60,11 @@ def checkbox(
 
         agree = nsh.signal(False)
         nsh.view(
-            nsh.checkbox(agree, "I agree", test_id="agree"),
+            nsh.checkbox("I agree", checked=agree, test_id="agree"),
             nsh.button("Continue", on_press=..., class_=lambda: "" if agree() else "opacity-50"),
         )
     """
+    _toggle.check_label("checkbox", label)
     value, handler = _toggle.state(checked, on_change)
     is_checked = _toggle.reader(value)
     is_mixed = _toggle.reader(indeterminate)

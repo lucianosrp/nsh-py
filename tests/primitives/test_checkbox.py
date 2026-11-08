@@ -9,7 +9,7 @@ from nsh.testing import open
 
 def test_checkbox_props():
     agree = nsh.signal(False)
-    c = nsh.checkbox(agree, "I agree", class_="p-2", test_id="agree")
+    c = nsh.checkbox("I agree", checked=agree, class_="p-2", test_id="agree")
     assert c.kind == "checkbox"
     assert c.props["checked"] is agree
     assert c.props["on_change"] == agree.set  # a press sets the signal
@@ -30,11 +30,11 @@ def test_checkbox_props():
     def log(value):
         pass
 
-    # An explicit on_change replaces the signal's set; a callable is one-way.
-    assert nsh.checkbox(agree, on_change=log).props["on_change"] is log
-    assert "on_change" not in nsh.checkbox(lambda: agree()).props
+    # A callable is one-way and read-only.
+    assert "on_change" not in nsh.checkbox(checked=lambda: agree()).props
+    assert nsh.checkbox(checked=lambda: agree(), on_change=log).props["on_change"] is log
     # A bool is the first value of the checkbox's own signal.
-    own = nsh.checkbox(True).props
+    own = nsh.checkbox(checked=True).props
     assert isinstance(own["checked"], nsh.Signal) and own["checked"]() is True
 
 
@@ -42,7 +42,7 @@ def test_pressing_toggles_the_signal():
     def App():
         agree = nsh.signal(False)
         return nsh.view(
-            nsh.checkbox(agree, "I agree", test_id="agree"),
+            nsh.checkbox("I agree", checked=agree, test_id="agree"),
             nsh.text(lambda: f"agree={agree()}"),
         )
 
@@ -62,7 +62,7 @@ def test_signal_writes_show_in_the_box():
     def App():
         agree = nsh.signal(False)
         return nsh.view(
-            nsh.checkbox(agree, "I agree"),
+            nsh.checkbox("I agree", checked=agree),
             nsh.button("check", on_press=agree.setter(True)),
         )
 
@@ -76,7 +76,7 @@ def test_a_bool_toggles_by_itself_and_reports():
     seen = []
 
     def App():
-        return nsh.checkbox(True, "Remember me", on_change=seen.append, test_id="remember")
+        return nsh.checkbox("Remember me", checked=True, on_change=seen.append, test_id="remember")
 
     with open(App) as app:
         assert app.shows(CHECK)
@@ -94,7 +94,7 @@ def test_a_callable_is_one_way():
     def App():
         agree = nsh.signal(False)
         return nsh.view(
-            nsh.checkbox(lambda: agree(), "Shown", on_change=asked.append, test_id="shown"),
+            nsh.checkbox("Shown", checked=lambda: agree(), on_change=asked.append, test_id="shown"),
             nsh.button("check", on_press=agree.setter(True)),
         )
 
@@ -114,12 +114,14 @@ def test_indeterminate_shows_a_dash_and_asks_for_checked():
         picked = nsh.signal(False)
         some = nsh.signal(True)
 
-        def change(value):
-            some.set(False)
-            picked.set(value)
-
         return nsh.view(
-            nsh.checkbox(picked, "All", indeterminate=some, on_change=change, test_id="all"),
+            nsh.checkbox(
+                "All",
+                checked=picked,
+                indeterminate=some,
+                on_change=lambda _: some.set(False),
+                test_id="all",
+            ),
             nsh.text(lambda: f"all={picked()}"),
         )
 
@@ -135,7 +137,7 @@ def test_disabled_ignores_presses():
         agree = nsh.signal(False)
         locked = nsh.signal(True)
         return nsh.view(
-            nsh.checkbox(agree, "I agree", disabled=locked, test_id="agree"),
+            nsh.checkbox("I agree", checked=agree, disabled=locked, test_id="agree"),
             nsh.button("unlock", on_press=locked.setter(False)),
             nsh.text(lambda: f"agree={agree()}"),
         )
@@ -153,7 +155,7 @@ def test_failing_on_change_is_logged(caplog):
     def boom(value):
         raise ValueError("nope")
 
-    with open(lambda: nsh.checkbox(False, "x", on_change=boom, test_id="x")) as app:
+    with open(lambda: nsh.checkbox("x", on_change=boom, test_id="x")) as app:
         app.press("id:x")
         assert app.shows(CHECK)  # its own value was set before on_change ran
     assert "nope" in caplog.text
@@ -165,7 +167,9 @@ def test_class_and_test_id_work_together():
     def App():
         agree = nsh.signal(False)
         return nsh.view(
-            nsh.checkbox(agree, "I agree", class_=lambda: "pl-6" if agree() else "", test_id="agree"),
+            nsh.checkbox(
+                "I agree", checked=agree, class_=lambda: "pl-6" if agree() else "", test_id="agree"
+            ),
             nsh.text(lambda: f"agree={agree()}"),
         )
 
@@ -174,3 +178,26 @@ def test_class_and_test_id_work_together():
         app.wait_for("agree=True")
         app.press("id:agree")
         app.wait_for("agree=False")
+
+
+def test_a_signal_is_set_before_on_change_runs():
+    seen = []
+
+    def App():
+        agree = nsh.signal(False)
+        return nsh.checkbox(
+            "I agree", checked=agree, on_change=lambda v: seen.append((v, agree())), test_id="agree"
+        )
+
+    with open(App) as app:
+        app.press("id:agree")
+        app.wait_for(CHECK)
+    assert seen == [(True, True)]  # on_change sees the new value
+
+
+@pytest.mark.parametrize("value", [True, nsh.signal(False)])
+def test_the_value_first_raises(value):
+    with pytest.raises(TypeError, match="label first"):
+        nsh.checkbox(value)
+    with pytest.raises(TypeError, match="label first"):
+        nsh.switch(value)

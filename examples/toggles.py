@@ -24,18 +24,20 @@ def Toggles():
         nsh.text("Toppings", class_="text-lg font-semibold"),
         # "All" is checked when every topping is, a dash when some are.
         nsh.checkbox(
-            lambda: picked_count() == len(TOPPINGS),
             "All",
+            checked=lambda: picked_count() == len(TOPPINGS),
             indeterminate=lambda: 0 < picked_count() < len(TOPPINGS),
             on_change=pick_all,
         ),
-        *[nsh.checkbox(s, name, class_="pl-6") for name, s in picked.items()],
-        nsh.checkbox(True, "Remember my order"),  # keeps its own value
-        nsh.checkbox(False, "Gift wrap (sold out)", disabled=True),
+        *[nsh.checkbox(name, checked=s, class_="pl-6") for name, s in picked.items()],
+        nsh.checkbox("Remember my order", checked=True),  # keeps its own value
+        nsh.checkbox("Gift wrap (sold out)", disabled=True),
         nsh.text("Settings", class_="text-lg font-semibold pt-2"),
-        nsh.switch(wifi, "Wi-Fi"),
-        nsh.text(lambda: "Connected" if wifi() else "Offline", class_="text-sm text-muted-foreground"),
-        nsh.switch(False, "Airplane mode (managed)", disabled=True),
+        nsh.switch("Wi-Fi", checked=wifi),
+        nsh.text(
+            lambda: "Connected" if wifi() else "Offline", class_="text-sm text-muted-foreground"
+        ),
+        nsh.switch("Airplane mode (managed)", disabled=True),
         nsh.text("Progress", class_="text-lg font-semibold pt-2"),
         nsh.progress(saved, lambda: f"Saved {saved()}%"),
         nsh.progress(lambda: picked_count(), "Toppings picked", max=len(TOPPINGS)),
