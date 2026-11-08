@@ -190,6 +190,9 @@ also takes `disabled`, and a signal as `value`). To check a call against
 NSH's source, which matches our pin:
 `~/.cargo/registry/src/index.crates.io-*/nsh-core-0.3.0/src/element/host.rs`
 (`pub fn input`, `impl Input`; on Windows, `%USERPROFILE%\.cargo\registry\src\`).
+Binding an nsh-base component (a checkbox, tabs, a dialog) works a little
+differently: see "Binding nsh-base components" in `docs/architecture.md`,
+and copy `src/elements/checkbox.rs`.
 
 NSH's `Input` has `.value(text)` (controlled), `.default_value(text)`,
 `.placeholder(text)`, `.on_change(|text: &str| ..)` and `.on_submit(..)`.

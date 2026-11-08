@@ -246,3 +246,49 @@ nodes, bindings and the signals `render` made) and disposes the rest.
   failed `items` keeps the rows shown (the last good list), so their state
   survives an error that may pass.
 - The row's index isn't passed to Python yet.
+
+## Binding nsh-base components
+
+`checkbox`, `switch` and `progress` are nsh-base components (`Checkbox`,
+`Switch`, `Progress`), not host elements like `view` or `input`. Tabs,
+tooltips and dialogs will be bound the same way, so here is the recipe
+and what is different.
+
+- **Build it with its constructor.** `#[component] fn Checkbox` gives
+  `nsh_base::checkbox()`: one setter per prop, named as the field
+  (`.checked(..)`, `.indicator_class(..)`), which takes a value or a
+  `Reactive` (so `props::boolean`, `props::string` and `props::number`
+  feed it straight from Python), a slot setter that takes an element
+  (`.indicator(..)`), `.child(..)` for the children, and one listener per
+  event (`.on_change(|value: &bool| ..)`). Read the component's file in
+  `nsh-base-0.3.0/src/` for its props and events; nsh-engine's
+  `tests/engine/rust_styles.rs` styles a switch and a checkbox from Rust.
+- **The component has no look.** nsh-base owns the behaviour (presses,
+  keys, the disabled state, the role and value for screen readers) and
+  nothing else. Python gives each part its look as props
+  (`indicator_class`, `track_class`, `thumb_class`), with theme tokens.
+  `checked:`, `indeterminate:` and `disabled:` classes on a part follow
+  the component's state; on the parts' *children* (the check mark, a
+  label) they don't, so Python binds those to the state itself (the mark
+  is a `text` bound to `checked`).
+- **The root takes no classes (NSH 0.3.0).** `app_class` on a component
+  element is dropped: only typed styles (`.flex_row()`) and inline styles
+  reach the component's root. So the builder gives the root its layout
+  with typed styles (the box, then the label, in a row), and the
+  caller's `class_` goes on a `view` around the component
+  (`props::with_class`): margins, padding, sizes and the like work, the
+  root's own layout doesn't change.
+- **The root takes no `test_id`.** A component element isn't
+  `Interactive`, which is where `test_id` lives. `props::test_probe` adds
+  an empty child over the whole component (`absolute inset-0`, touches
+  pass through) that carries the id. nsh-testing's `press("id:..")` finds
+  it and presses the nearest view around it that hears presses: the
+  component's root. Add the probe last among the children.
+- **Two-way binding is Python's.** The component reports the value a
+  press asks for (`on_change(True)`) and shows the value it is given.
+  `primitives/_toggle.py` turns what the caller passed into both: a
+  signal is two-way (the handler sets it, then calls `on_change`), a
+  callable is one-way and read-only (the handler only calls
+  `on_change`), and a bool is the first value of a signal the toggle
+  makes for itself, so `nsh.checkbox("Remember me", checked=True)` still
+  toggles.
