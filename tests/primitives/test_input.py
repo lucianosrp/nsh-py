@@ -24,8 +24,8 @@ def test_input_props():
     def log(text):
         pass
 
-    # An explicit on_change replaces the signal's set; a lambda or a string stays one-way.
-    assert nsh.input(name, on_change=log).props["on_change"] is log
+    # With a signal, on_change runs after the set; a lambda or a string stays one-way.
+    assert nsh.input(name, on_change=log).props["on_change"] is not log
     assert "on_change" not in nsh.input(lambda: name()).props
     assert "on_change" not in nsh.input("first").props
 
@@ -103,21 +103,20 @@ def test_string_value_is_the_first_text():
     assert seen == ["Ada!"]
 
 
-def test_on_change_gets_the_text_instead_of_the_signal():
+def test_a_signal_is_set_before_on_change_runs():
     seen = []
 
     def App():
         name = nsh.signal("")
         return nsh.view(
-            nsh.input(name, on_change=seen.append, test_id="name"),
+            nsh.input(name, on_change=lambda t: seen.append((t, name())), test_id="name"),
             nsh.text(lambda: f"signal={name()!r}"),
         )
 
     with open(App) as app:
         app.type_text("id:name", "Hi")
-        assert seen == ["H", "Hi"]
-        # The signal is the caller's to set: it was not.
-        assert app.shows("signal=''")
+        app.wait_for("signal='Hi'")
+    assert seen == [("H", "H"), ("Hi", "Hi")]  # on_change sees the new value
 
 
 def test_on_change_can_transform_what_is_typed():
