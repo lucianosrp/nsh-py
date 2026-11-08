@@ -25,12 +25,12 @@ def input(  # noqa: A001
 
     `value` is what the field shows:
 
-    - a **signal**: two-way. The field shows it, and typing sets it
-      (unless `on_change` is given: then `on_change(text)` runs instead
-      and it's up to you to set the signal);
-    - a **callable** (lambda, computed): one-way. The field shows what it
-      returns, again whenever the signals it reads change; typing changes
-      nothing unless you pass `on_change`;
+    - a **signal**: two-way. The field shows it, and typing sets it, then
+      calls `on_change(text)` if given (which may set it again, to
+      transform what was typed);
+    - a **callable** (lambda, computed): one-way and read-only. The field
+      shows what it returns, again whenever the signals it reads change;
+      typing only calls `on_change(text)`;
     - a **string**: the first text, which the user then edits.
 
     `on_change(text)` runs on every edit and `on_submit(text)` when the user
@@ -43,8 +43,8 @@ def input(  # noqa: A001
             nsh.text(lambda: f"Hello, {name()}"),
         )
     """
-    if on_change is None and isinstance(value, Signal):
-        on_change = value.set
+    if isinstance(value, Signal):
+        on_change = _set_then(value, on_change)
     return Element(
         KIND,
         props(
@@ -58,3 +58,15 @@ def input(  # noqa: A001
         ),
         [],
     )
+
+
+def _set_then(value: Signal, on_change: Callable[[str], Any] | None) -> Callable[[str], Any]:
+    """Typing's handler for a bound signal: set it, then call `on_change`."""
+    if on_change is None:
+        return value.set
+
+    def changed(text: str) -> None:
+        value.set(text)
+        on_change(text)
+
+    return changed
