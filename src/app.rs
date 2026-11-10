@@ -202,8 +202,48 @@ mod interrupt {
     }
 }
 
-/// Ctrl-C on macOS and Windows: not wired yet (roadmap step 2 is Linux).
-#[cfg(not(target_os = "linux"))]
+/// The same on macOS: an `NSTimer` on the main run loop checks, and
+/// `quit_app` makes `run_app` return (AppKit's `terminate:` would end the
+/// process before Python could raise).
+#[cfg(target_os = "macos")]
+mod interrupt {
+    use std::{cell::RefCell, ptr::NonNull, rc::Rc};
+
+    use block2::RcBlock;
+    use nsh_platform_macos::{objc2::rc::Retained, objc2_foundation::NSTimer};
+    use pyo3::prelude::*;
+
+    pub(super) struct Watcher {
+        timer: Retained<NSTimer>,
+        error: Rc<RefCell<Option<PyErr>>>,
+    }
+
+    pub(super) fn install() -> Watcher {
+        let error: Rc<RefCell<Option<PyErr>>> = Rc::default();
+        let seen = error.clone();
+        let block = RcBlock::new(move |timer: NonNull<NSTimer>| {
+            if let Err(err) = Python::attach(|py| py.check_signals()) {
+                *seen.borrow_mut() = Some(err);
+                // SAFETY: AppKit passes the live timer that is firing.
+                unsafe { timer.as_ref() }.invalidate();
+                nsh_platform_macos::quit_app();
+            }
+        });
+        // SAFETY: called on the main thread (run's caller), whose run loop
+        // run_app runs; the timer keeps its own copy of the block.
+        let timer =
+            unsafe { NSTimer::scheduledTimerWithTimeInterval_repeats_block(0.1, true, &block) };
+        Watcher { timer, error }
+    }
+
+    pub(super) fn finish(watcher: Watcher) -> Option<PyErr> {
+        watcher.timer.invalidate();
+        watcher.error.borrow_mut().take()
+    }
+}
+
+/// Ctrl-C on Windows: not wired yet.
+#[cfg(target_os = "windows")]
 mod interrupt {
     use pyo3::prelude::*;
 

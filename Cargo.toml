@@ -24,6 +24,8 @@ nsh-platform-linux = { version = "=0.4.0", default-features = false }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 nsh-platform-macos = { version = "=0.4.0", default-features = false }
+# The Ctrl-C timer's callback (an Objective-C block); the version NSH uses.
+block2 = "0.6"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 nsh-platform-windows = { version = "=0.4.0", default-features = false }

@@ -1758,6 +1758,7 @@ dependencies = [
 name = "nsh-py"
 version = "0.0.1"
 dependencies = [
+ "block2",
  "nsh-base",
  "nsh-core",
  "nsh-engine",
