@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nsh-py on the web</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  #app { position: fixed; inset: 0; }
+  #status { position: fixed; left: 8px; bottom: 8px; font: 12px monospace; color: #888; z-index: 10; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="status">loading…</div>
+<script type="module">
+  import { createPlayer } from "./nsh.js";
+  import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyodide.mjs";
+
+  const status = document.getElementById("status");
+  const step = (s) => { status.textContent = s; console.log("[spike]", s); };
+  const WHEEL = "nsh_py-0.0.1-cp310-abi3-pyemscripten_2026_0_wasm32.whl";
+
+  // Pyodide instantiates the extension; its `nsh` imports (NSH's browser
+  // functions) come from the player. Catch that instantiation, add them,
+  // and keep the instance.
+  let nshImports = null;
+  let instance = null;
+  const importsNsh = (m) => WebAssembly.Module.imports(m).some((i) => i.module === "nsh");
+  const withNsh = (imports) => ({ ...imports, nsh: nshImports });
+  const instantiate = WebAssembly.instantiate;
+  WebAssembly.instantiate = async function (source, imports) {
+    const module = source instanceof WebAssembly.Module ? source : await WebAssembly.compile(source);
+    if (!importsNsh(module)) return instantiate.call(this, source, imports);
+    const made = await instantiate.call(this, module, withNsh(imports));
+    instance = made;
+    return source instanceof WebAssembly.Module ? made : { module, instance: made };
+  };
+  const Instance = WebAssembly.Instance;
+  WebAssembly.Instance = function (module, imports) {
+    if (!importsNsh(module)) return new Instance(module, imports);
+    return (instance = new Instance(module, withNsh(imports)));
+  };
+  WebAssembly.Instance.prototype = Instance.prototype;
+
+  try {
+    step("loading Pyodide…");
+    const pyodide = await loadPyodide();
+    window.pyodide = pyodide;
+    const player = await createPlayer(document.getElementById("app"), {
+      instantiate: async (imports) => {
+        nshImports = imports.nsh;
+        step("installing nsh-py…");
+        await pyodide.loadPackage("micropip");
+        await pyodide.pyimport("micropip").install(new URL(WHEEL, location.href).href);
+        pyodide.runPython("import nsh._core");
+        // Only needed while the extension loads: put WebAssembly back.
+        WebAssembly.instantiate = instantiate;
+        WebAssembly.Instance = Instance;
+        if (!instance) throw new Error("the extension was not instantiated through the hook");
+        // A side module exports no memory: it shares Pyodide's (which grows).
+        const memory = { get buffer() { return pyodide._module.HEAPU8.buffer; } };
+        return { exports: instance.exports, memory };
+      },
+    });
+    window.player = player;
+    // ?app=examples/poll.py runs one of the repo's examples (build.sh
+    // copies them next to this page); the counter by default.
+    const app = new URLSearchParams(location.search).get("app") ?? "counter.py";
+    step("running " + app + "…");
+    const source = await fetch(app);
+    if (!source.ok) throw new Error(app + ": " + source.status);
+    pyodide.runPython(await source.text(), { filename: app });
+    player.runRust();
+    step("nsh-py " + pyodide.runPython("import nsh; nsh.__version__") + " on Pyodide " + pyodide.version);
+  } catch (err) {
+    step("error: " + (err?.message ?? err));
+    console.error(err);
+  }
+</script>
+</body>
+</html>
