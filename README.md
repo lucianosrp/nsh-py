@@ -53,8 +53,8 @@ More in [`examples/`](examples/): a focus timer, a task list, a poll, a DataFram
 
 ## Features
 
-- **Plain Python:** components are functions, state is `nsh.signal`, and anything that should update is a
-  lambda. Computeds, effects and timers are built in, and signals can be written from any thread.
+- **Plain Python:** components are functions (or [classes](#prefer-object-oriented)), state is `nsh.signal`,
+  and anything that should update is a lambda. Computeds, effects and timers are built in, and signals can be written from any thread.
 - **Native, not a web view:** NSH draws with each platform's own views, so apps start fast and feel at
   home.
 - **Styled with Tailwind classes:** `class_="p-4 gap-2 rounded-xl"`, with a light and dark theme. Ready-made
@@ -104,22 +104,73 @@ def Counter():
 `count.map(fn)` is a one-line computed. Full example:
 [`examples/counter_decorators.py`](examples/counter_decorators.py).
 
-Prefer classes? Annotated attributes are the state:
+## Prefer object-oriented?
+
+Write components as classes with `nsh.Component`. Annotated class
+attributes are the state: reading `self.seconds` reads it, and assigning
+`self.seconds += 1` redraws whatever shows it.
 
 ```python
-class Counter(nsh.Component):
-    count: int = 0
+import nsh
 
-    def update(self):
-        self.count += 1
+class Stopwatch(nsh.Component):
+    label: str = "Stopwatch"  # a prop: Stopwatch(label="Tea")
+    seconds: int = 0
+    running: bool = False
+
+    def setup(self):  # runs once, before view()
+        nsh.set_interval(1, self.tick)
+
+    def tick(self):
+        if self.running:
+            self.seconds += 1
+
+    def toggle(self):
+        self.running = not self.running
+
+    def reset(self):
+        self.seconds = 0
+
+    @property
+    def clock(self):  # follows seconds, like a computed
+        return f"{self.seconds // 60:02}:{self.seconds % 60:02}"
 
     def view(self):
-        return nsh.button(lambda: f"Count: {self.count}", on_press=self.update)
+        return nsh.card(
+            nsh.text(lambda: self.clock, class_="text-4xl font-bold"),
+            nsh.view(
+                nsh.button(lambda: "Pause" if self.running else "Start", on_press=self.toggle),
+                nsh.button("Reset", on_press=self.reset),
+                class_="flex-row gap-2",
+            ),
+            title=self.label,
+        )
+
+
+def App():
+    return nsh.view(Stopwatch(label="Tea"), Stopwatch(label="Eggs"), class_="p-4 gap-4")
+
+
+nsh.run(App, title="Stopwatches")
 ```
 
-It's the same thing written another way: `view()` runs once and the
-lambdas update, so pick whichever reads better. Full example:
-[`examples/counter_class.py`](examples/counter_class.py).
+- **State:** each annotated attribute (`seconds: int = 0`) is a signal, one per
+  instance, so the two stopwatches tick on their own. Unannotated attributes are
+  plain constants.
+- **Props:** `Stopwatch(label="Tea")` sets a starting value. An attribute with no
+  default must be passed, and passing a signal (`Stopwatch(seconds=shared)`) shares
+  the caller's state.
+- **`setup()`** runs once, before `view()`: start timers and effects there.
+- **`view()`** runs once too. Read state inside lambdas (`lambda: self.clock`) to
+  keep it live; a plain `self.clock` is read once.
+- **`self.signals.<name>`** is an attribute's signal, for widgets that take one:
+  `nsh.checkbox("Done", checked=self.signals.done)`.
+- Changing a list in place (`self.items.append(x)`) doesn't redraw: assign a new
+  one (`self.items = [*self.items, x]`).
+
+Classes and functions are the same thing written two ways, with the same speed
+(nothing re-renders; the lambdas update), so mix them freely. The counter as a
+class: [`examples/counter_class.py`](examples/counter_class.py).
 
 ## Hot reload
 

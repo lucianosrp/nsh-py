@@ -82,6 +82,18 @@ def test_tasks_example():
         app.wait_for("2 left")
 
 
+def test_stopwatch_example():
+    App = load_example("stopwatch")["App"]
+    with open(App) as app:
+        assert app.shows("Tea") and app.shows("Eggs")
+        app.press("Start >> nth=0")  # only the first one runs
+        app.wait_for("00:01")
+        assert app.texts().count("00:00") == 1
+        app.press("Pause")
+        app.press("Reset >> nth=0")
+        app.wait_for("text:/^00:00$/ >> nth=1")
+
+
 def test_counter_decorators_example():
     Counter = load_example("counter_decorators")["Counter"]
     with open(Counter) as app:
