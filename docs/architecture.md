@@ -215,6 +215,26 @@ Details:
   the queue: the callback stops being called at once, and the task ends
   when it next wakes. They need a running app (`RuntimeError` otherwise).
 
+## Class components: `nsh.Component`
+
+Sugar over function components, not a second model (`_component.py`).
+A metaclass makes `Counter(**props)` run `setup()` then `view()` once and
+return the elements, so a class goes anywhere a function component does.
+Each annotated class attribute becomes a descriptor over one signal per
+instance: reading `self.count` is `signal()` (tracked), assigning is
+`.set()`. Props set the starting values; a `Signal` passed as a prop is
+used as is (shared state). Hot reload keys the fields by the class
+(`_signal_hook(value, (where, instance))`) instead of the stack, which
+would point at `_component.py` for every class.
+
+**Why not React-style `render()`.** Re-running the whole view on each
+change costs in proportion to the tree and drops native state (focus,
+cursor, scroll). Measured headless, one changed number among N rows:
+function and class components both make 1 Python call per update;
+re-rendering makes N, and takes 2-7x the CPU per update at 10-1000 rows.
+The object itself costs ~65 ns more than a function call, once per
+mount; a field read ~100 ns more than calling the signal.
+
 ## Keyed lists: `nsh.each`
 
 `nsh.each(items, render, key=...)` binds NSH's `each` (flow.rs). A

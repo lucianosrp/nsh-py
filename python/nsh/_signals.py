@@ -296,7 +296,7 @@ class Computed(_Source[T]):
         return f"computed({self._name}: {shown})"
 
 
-_signal_hook: Callable[[Any], Signal[Any]] | None = None
+_signal_hook: Callable[..., Signal[Any]] | None = None
 """Set by hot reload (`nsh._reload`) while it renders, to keep signals'
 values across reloads. `None` otherwise."""
 

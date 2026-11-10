@@ -104,6 +104,23 @@ def Counter():
 `count.map(fn)` is a one-line computed. Full example:
 [`examples/counter_decorators.py`](examples/counter_decorators.py).
 
+Prefer classes? Annotated attributes are the state:
+
+```python
+class Counter(nsh.Component):
+    count: int = 0
+
+    def update(self):
+        self.count += 1
+
+    def view(self):
+        return nsh.button(lambda: f"Count: {self.count}", on_press=self.update)
+```
+
+It's the same thing written another way: `view()` runs once and the
+lambdas update, so pick whichever reads better. Full example:
+[`examples/counter_class.py`](examples/counter_class.py).
+
 ## Hot reload
 
 Keep the window open while you edit: save the file and the app redraws
