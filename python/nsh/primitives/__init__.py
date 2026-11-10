@@ -7,6 +7,8 @@ Each module here pairs with `src/elements/<kind>.rs` and declares its
 
 from nsh.primitives.checkbox import KIND as _CHECKBOX
 from nsh.primitives.checkbox import checkbox
+from nsh.primitives.image import KIND as _IMAGE
+from nsh.primitives.image import image
 from nsh.primitives.input import KIND as _INPUT
 from nsh.primitives.input import input
 from nsh.primitives.progress import KIND as _PROGRESS
@@ -23,7 +25,17 @@ from nsh.primitives.view import view
 # Note: `nsh.primitives.view` is the function, not the module (the import
 # above rebinds it); import a module's other names from the module itself:
 # `from nsh.primitives.view import KIND`.
-KINDS = frozenset({_CHECKBOX, _INPUT, _PROGRESS, _SCROLL, _SWITCH, _TEXT, _VIEW})
+KINDS = frozenset({_CHECKBOX, _IMAGE, _INPUT, _PROGRESS, _SCROLL, _SWITCH, _TEXT, _VIEW})
 """The element kinds the primitives build."""
 
-__all__ = ["KINDS", "checkbox", "input", "progress", "scroll", "switch", "text", "view"]
+__all__ = [
+    "KINDS",
+    "checkbox",
+    "image",
+    "input",
+    "progress",
+    "scroll",
+    "switch",
+    "text",
+    "view",
+]

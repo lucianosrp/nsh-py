@@ -9,6 +9,7 @@ use nsh_core::prelude::*;
 use pyo3::{prelude::*, types::PyDict};
 
 mod checkbox;
+mod image;
 mod input;
 mod progress;
 mod scroll;
@@ -23,6 +24,7 @@ pub(crate) type Build =
 /// Every kind, by the name Python's `Element.kind` uses.
 const KINDS: &[(&str, Build)] = &[
     ("checkbox", checkbox::build),
+    ("image", image::build),
     ("input", input::build),
     ("progress", progress::build),
     ("scroll", scroll::build),
