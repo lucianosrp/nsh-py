@@ -29,11 +29,27 @@ def run(
     title: str = "nsh",
     size: tuple[int, int] = (480, 640),
     app_id: str = "dev.nsh_py.app",
+    reload: bool = False,
 ) -> None:
     """Open a window showing `root` and run until it closes.
 
     `root` is a component (a function returning elements) or elements.
     Blocks the calling thread, which must be the main thread. Ctrl-C quits
     and raises `KeyboardInterrupt`.
+
+    `reload=True` redraws the window when you save the script (or a local
+    module it imports), keeping the window open: for development. State
+    made in components starts over on each reload. `python -m nsh.reload
+    app.py` does the same without changing the script.
     """
+    if reload:
+        import sys
+
+        from nsh._reload import run_reloading
+
+        script = getattr(sys.modules["__main__"], "__file__", None)
+        if script is None:
+            raise RuntimeError("reload=True needs the app to be run as a script file")
+        run_reloading(script, root, title=title, size=size, app_id=app_id)
+        return
     _core.run(root, title=title, size=size, app_id=app_id)
