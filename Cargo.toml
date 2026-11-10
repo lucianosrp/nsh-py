@@ -19,6 +19,10 @@ nsh-engine = { version = "=0.5.0", default-features = false }
 # The headless driver (nsh.testing): no QuickJS without default features.
 nsh-testing = { version = "=0.5.0", default-features = false }
 
+[target.'cfg(target_os = "emscripten")'.dependencies]
+# The web (Pyodide): see web/README.md. Rust apps only (no QuickJS).
+nsh-platform-web = { version = "=0.5.0", default-features = false }
+
 [target.'cfg(target_os = "linux")'.dependencies]
 nsh-platform-linux = { version = "=0.5.0", default-features = false }
 

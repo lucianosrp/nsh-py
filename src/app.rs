@@ -119,6 +119,7 @@ pub(crate) fn app_root() -> nsh_core::element::Root {
 
 /// Runs the app until its window closes. Raises `KeyboardInterrupt` if
 /// Ctrl-C stopped it (`nsh.run` turns that into a quiet return).
+#[cfg(not(target_os = "emscripten"))]
 #[pyfunction]
 #[pyo3(signature = (root=None, *, title="nsh".to_owned(), size=(480, 640), app_id="dev.nsh_py.app".to_owned()))]
 pub(crate) fn run(
@@ -151,6 +152,28 @@ pub(crate) fn run(
         Some(err) => Err(err),
         None => Ok(()),
     }
+}
+
+/// On the web (Pyodide), the page drives the app: `run` registers the
+/// root with nsh-platform-web and returns; `nsh.js` then calls
+/// `nsh_start_rust` and pumps the engine on the page's main thread.
+#[cfg(target_os = "emscripten")]
+#[pyfunction]
+#[pyo3(signature = (root=None, *, title="nsh".to_owned(), size=(480, 640), app_id="dev.nsh_py.app".to_owned()))]
+pub(crate) fn run(
+    root: Option<Py<PyAny>>,
+    title: String,
+    size: (i32, i32),
+    app_id: String,
+) -> PyResult<()> {
+    let _ = (title, size);
+    set_root(root);
+    // There are no other threads, but jobs posted before the page starts
+    // the app (`nsh.call_soon`, `set_timeout` at import) wait for its pump.
+    crate::queue::begin();
+    nsh_platform_web::set_ui_sets(vec![nsh_base::registry()]);
+    nsh_platform_web::set_root(move || app_root().app_id(app_id.clone()));
+    Ok(())
 }
 
 /// Ctrl-C: Python's SIGINT handler only sets a flag, which
@@ -203,7 +226,7 @@ mod interrupt {
 }
 
 /// Ctrl-C on macOS and Windows: not wired yet (roadmap step 2 is Linux).
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(any(target_os = "linux", target_os = "emscripten")))]
 mod interrupt {
     use pyo3::prelude::*;
 

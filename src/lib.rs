@@ -4,6 +4,7 @@ mod app;
 mod bridge;
 mod each;
 mod elements;
+#[cfg(not(target_arch = "wasm32"))]
 mod headless;
 mod props;
 mod queue;
@@ -19,6 +20,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(signal::notify_all, m)?)?;
     m.add_function(wrap_pyfunction!(elements::element_kinds, m)?)?;
     m.add_class::<signal::Trigger>()?;
+    #[cfg(not(target_arch = "wasm32"))]
     m.add_class::<headless::Headless>()?;
     queue::register(m)?;
     Ok(())
