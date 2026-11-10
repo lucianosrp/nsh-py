@@ -188,7 +188,7 @@ finished code is in the repo (`src/elements/input.rs`,
 `examples/form.py`); the snippets below are simplified (the real `input`
 also takes `disabled`, and a signal as `value`). To check a call against
 NSH's source, which matches our pin:
-`~/.cargo/registry/src/index.crates.io-*/nsh-core-0.3.0/src/element/host.rs`
+`~/.cargo/registry/src/index.crates.io-*/nsh-core-0.4.0/src/element/host.rs`
 (`pub fn input`, `impl Input`; on Windows, `%USERPROFILE%\.cargo\registry\src\`).
 Binding an nsh-base component (a checkbox, tabs, a dialog) works a little
 differently: see "Binding nsh-base components" in `docs/architecture.md`,
@@ -391,7 +391,7 @@ maintainer.
 - **Never hold the GIL while waiting on the engine.** Wrap blocking calls
   in `py.detach(|| ...)`. The engine needs the GIL to run your Python
   callbacks; if you hold it and wait, both sides wait forever.
-- **Don't bump the NSH pins** (`=0.3.0`) in a sprint PR. Bumps are
+- **Don't bump the NSH pins** (`=0.4.0`) in a sprint PR. Bumps are
   deliberate, one PR each.
 - **Never depend on the crates.io crate called `nsh`.** It's an unrelated
   shell. NSH's crates are `nsh-core`, `nsh-base` and so on.
