@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 import runpy
+import site
 import sys
 import threading
 from collections.abc import Callable
@@ -28,6 +29,34 @@ logger = logging.getLogger("nsh")
 
 POLL_SECONDS = 0.25
 """How often the watcher looks at the files' modification times."""
+
+
+_INSTALLED = tuple(
+    Path(p).resolve()
+    for p in {
+        sys.prefix,
+        sys.base_prefix,
+        sys.exec_prefix,
+        *site.getsitepackages(),
+        site.getusersitepackages(),
+    }
+)
+"""Where the interpreter and installed packages live: never reloaded."""
+
+
+def is_app_module(name: str, path: Path, folder: Path) -> bool:
+    """Whether a module is the app's own code, to reload with the script.
+
+    nsh itself never reloads, even when the app sits next to it (a script
+    in a checkout of nsh-py): a second copy of its classes would make the
+    window show elements as text. Nor does anything installed, such as a
+    `.venv` inside the app's folder.
+    """
+    if name == "nsh" or name.startswith("nsh."):
+        return False
+    if not path.is_relative_to(folder):
+        return False
+    return not any(path.is_relative_to(p) for p in _INSTALLED) and "site-packages" not in path.parts
 
 
 class _Captured(Exception):
@@ -125,12 +154,13 @@ class Reloader:
         raise RuntimeError(f"{self.script.name} never called nsh.run(...)")
 
     def _local_modules(self) -> dict[str, Path]:
-        """Imported modules whose file is in the script's folder (or below)."""
+        """The app's own imported modules: their file is in the script's
+        folder (or below), and they aren't nsh or an installed package."""
         folder = self.script.parent
         found = {}
         for name, module in list(sys.modules.items()):
             path = getattr(module, "__file__", None)
-            if path and Path(path).resolve().is_relative_to(folder):
+            if path and is_app_module(name, Path(path).resolve(), folder):
                 found[name] = Path(path).resolve()
         return found
 

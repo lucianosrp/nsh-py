@@ -1,16 +1,18 @@
 """Hot reload: the window shows the script's new root after a change."""
 
 import builtins
+import json
 import logging
 import os
 import sys
 import textwrap
 import time
+from pathlib import Path
 
 import pytest
 
 import nsh
-from nsh._reload import Reloader
+from nsh._reload import Reloader, is_app_module
 from nsh.testing import open
 
 APP = """
@@ -121,3 +123,37 @@ nsh.run(App)
             assert ticks.count("v2") > 0
     finally:
         del builtins.TICKS
+
+
+def test_nsh_and_installed_packages_never_reload(tmp_path):
+    # A script in a checkout of nsh-py has nsh under its folder, and a
+    # project's .venv sits under it too: neither is the app's own code.
+    nsh_file = tmp_path / "python" / "nsh" / "_element.py"
+    assert not is_app_module("nsh._element", nsh_file, tmp_path)
+    assert not is_app_module("nsh", tmp_path / "python" / "nsh" / "__init__.py", tmp_path)
+    venv_file = (
+        tmp_path / ".venv" / "lib" / "python3.14" / "site-packages" / "numpy" / "__init__.py"
+    )
+    assert not is_app_module("numpy", venv_file, tmp_path)
+    assert is_app_module("greeting", tmp_path / "greeting.py", tmp_path)
+    assert is_app_module("ui.cards", tmp_path / "ui" / "cards.py", tmp_path)
+    assert not is_app_module("json", Path(json.__file__).resolve(), tmp_path)
+
+
+def test_reload_next_to_nsh_keeps_drawing_elements(tmp_path):
+    # The bug this guards: reloading nsh too made a second Element class,
+    # and the window showed the elements' repr instead of drawing them.
+    script = tmp_path / "app.py"
+    write(script, "v1")
+    reloader = Reloader(script)
+    element_class = nsh.Element
+    with open(reloader.root()) as app:
+        app.wait_for("Hello v1 0")
+        write(script, "v2")
+        nsh.call_soon(reloader.reload)
+        app.wait_for("Hello v2 0")
+        assert not any(t.startswith("Element(") for t in app.texts())
+    assert sys.modules["nsh"].Element is element_class
+    # A script in the checkout's root has nsh under its folder.
+    reloader.script = Path(nsh.__file__).resolve().parents[2] / "app.py"
+    assert not any(n == "nsh" or n.startswith("nsh.") for n in reloader._local_modules())
