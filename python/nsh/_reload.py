@@ -4,8 +4,8 @@
 change to the app, keeps the window open while you edit. On save, the
 script runs again (its `nsh.run` call only hands over the new root) and
 the window's content is rebuilt from it. Local modules the script imports
-are reloaded too. State made inside components starts over, as after a
-restart, but the window, its size and its place stay.
+are reloaded too. Signals keep their values (a running timer keeps
+running), and the window, its size and its place stay.
 
 If the new code raises, the old view stays up and the traceback is
 logged, so a typo never closes the app.
@@ -18,12 +18,13 @@ import runpy
 import site
 import sys
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
-from nsh import _engine
-from nsh._signals import signal
+from nsh import _engine, _signals
+from nsh._signals import Signal, signal
 
 logger = logging.getLogger("nsh")
 
@@ -68,6 +69,66 @@ class _Captured(Exception):
         self.root = root
 
 
+class _Keeper:
+    """Keeps signals' values across reloads, like React's Fast Refresh.
+
+    While the script runs and the window's content renders, every
+    `nsh.signal(...)` is recorded under its place in the code: the
+    function that made it, which call of that function in this render,
+    and which signal in that call. On a reload the values are saved, and
+    the signal made at the same place by the new code starts from the
+    saved value instead of its initial one. A value of a different type
+    than the new initial one (you changed `0` to `""`) is dropped.
+    """
+
+    def __init__(self) -> None:
+        self.live: dict[tuple[str, int, int], Signal[Any]] = {}
+        self.saved: dict[tuple[str, int, int], Any] = {}
+        self._previous: dict[tuple[str, int, int], Signal[Any]] = {}
+        self._calls: dict[str, int] = {}
+        self._frames: dict[str, tuple[Any, int]] = {}
+
+    @contextmanager
+    def recording(self) -> Iterator[None]:
+        """Record (and restore) the signals made inside the block."""
+        self._calls, self._frames = {}, {}
+        _signals._signal_hook = self._make
+        try:
+            yield
+        finally:
+            _signals._signal_hook = None
+            self._frames = {}  # don't keep the frames' locals alive
+
+    def save(self) -> None:
+        """Before a reload: remember the current signals' values."""
+        self.saved = {key: s._value for key, s in self.live.items()}
+        self._previous, self.live = self.live, {}
+
+    def failed(self) -> None:
+        """The reload failed: the old view, and its signals, stay."""
+        self.live, self.saved = self._previous, {}
+
+    def _make(self, value: Any) -> Signal[Any]:
+        frame = sys._getframe(2)  # the caller of nsh.signal
+        code = frame.f_code
+        name = f"{code.co_filename}:{getattr(code, 'co_qualname', code.co_name)}"
+        last = self._frames.get(name)
+        if last is not None and last[0] is frame:
+            call, index = self._calls[name], last[1] + 1
+        else:
+            call, index = self._calls.get(name, -1) + 1, 0
+            self._calls[name] = call
+        self._frames[name] = (frame, index)
+        key = (name, call, index)
+        if key in self.saved:
+            old = self.saved.pop(key)
+            if value is None or type(old) is type(value):
+                value = old
+        made = Signal(value)
+        self.live[key] = made
+        return made
+
+
 class Reloader:
     """Runs `script` for its root, and runs it again on demand.
 
@@ -82,6 +143,7 @@ class Reloader:
         self._version: Any = None  # made on the app thread, by root()
         self._mtimes: dict[Path, float] = {}
         self._stop = threading.Event()
+        self._keeper = _Keeper()
         if self._root is None:
             self._root = self._run_script()
         self._mtimes = self._snapshot()
@@ -92,7 +154,8 @@ class Reloader:
         def region() -> Any:
             self._version()  # read, so a reload re-makes this region
             root = self._root
-            return root() if callable(root) else root
+            with self._keeper.recording():
+                return root() if callable(root) else root
 
         def Reloading() -> Any:  # noqa: N802 (a component)
             self._version = signal(0)
@@ -104,9 +167,11 @@ class Reloader:
         """Run the script again and show its new root. Returns whether it
         worked; on an error the old view stays and the error is logged."""
         self._forget_local_modules()
+        self._keeper.save()
         try:
             root = self._run_script()
         except Exception:
+            self._keeper.failed()
             logger.exception("Reload of %s failed; keeping the old view", self.script.name)
             return False
         self._root = root
@@ -144,7 +209,8 @@ class Reloader:
         if added:
             sys.path.insert(0, folder)
         try:
-            runpy.run_path(str(self.script), run_name="__main__")
+            with self._keeper.recording():
+                runpy.run_path(str(self.script), run_name="__main__")
         except _Captured as captured:
             return captured.root
         finally:

@@ -113,9 +113,10 @@ with the new code.
 python -m nsh.reload app.py        # or nsh.run(App, reload=True) in the script
 ```
 
-Local modules the script imports reload too. State made inside components
-starts over on each reload, and a broken edit keeps the old view up and
-logs the error. In the Python-only setup, use
+Local modules the script imports reload too. Signals keep their values,
+so a running timer keeps running while you restyle it; a signal whose
+initial value changes type starts over. A broken edit keeps the old view
+up and logs the error. In the Python-only setup, use
 `uv run --no-project python tools/run.py --reload app.py`.
 
 ## Install (experimental)
