@@ -57,7 +57,7 @@ def test_reload_shows_the_new_code(tmp_path):
         app.wait_for("Hello v1 1")
         write(script, "v2", word="Hi")  # the script and a module it imports
         nsh.call_soon(reloader.reload)
-        app.wait_for("Hi v2 0")  # new code; state made in components starts over
+        app.wait_for("Hi v2 1")  # new code; the count kept its value
         assert not app.shows("Hello v1 1")
 
 
@@ -157,3 +157,96 @@ def test_reload_next_to_nsh_keeps_drawing_elements(tmp_path):
     # A script in the checkout's root has nsh under its folder.
     reloader.script = Path(nsh.__file__).resolve().parents[2] / "app.py"
     assert not any(n == "nsh" or n.startswith("nsh.") for n in reloader._local_modules())
+
+
+KEEP = """
+import nsh
+
+def Row(name):
+    clicks = nsh.signal(INITIAL)
+    return nsh.button(lambda: f"{name}: {clicks()} LABEL", on_press=lambda: clicks.update(BUMP))
+
+def App():
+    return nsh.view(Row("a"), Row("b"))
+
+nsh.run(App)
+"""
+
+
+def keep_app(path, label, initial="0", bump="lambda n: n + 1"):
+    source = KEEP.replace("LABEL", label).replace("INITIAL", initial).replace("BUMP", bump)
+    path.write_text(source)
+
+
+def test_each_call_keeps_its_own_signal(tmp_path):
+    # Two calls of the same component keep their own values, by order.
+    script = tmp_path / "app.py"
+    keep_app(script, "v1")
+    reloader = Reloader(script)
+    with open(reloader.root()) as app:
+        app.press("text:a: 0 v1")
+        app.press("text:b: 0 v1")
+        app.press("text:b: 1 v1")
+        app.wait_for("text:b: 2 v1")
+        keep_app(script, "v2")
+        nsh.call_soon(reloader.reload)
+        app.wait_for("text:a: 1 v2")
+        assert app.shows("b: 2 v2")  # shows() takes plain text
+
+
+def test_a_signal_whose_type_changed_starts_over(tmp_path):
+    script = tmp_path / "app.py"
+    keep_app(script, "v1")
+    reloader = Reloader(script)
+    with open(reloader.root()) as app:
+        app.press("text:a: 0 v1")
+        app.wait_for("text:a: 1 v1")
+        keep_app(script, "v2", initial='""', bump='lambda s: s + "x"')
+        nsh.call_soon(reloader.reload)
+        app.wait_for("text:a:  v2")  # the int 1 doesn't fit a str signal: fresh ""
+
+
+def test_a_running_timer_keeps_running(tmp_path):
+    source = """
+import nsh
+
+def Clock():
+    left = nsh.signal(100)
+    running = nsh.signal(False)
+    def tick():
+        if running.value:
+            left.update(lambda s: s - 1)
+    nsh.set_interval(0.02, tick)
+    return nsh.view(
+        nsh.text(lambda: f"LABEL {left()}"),
+        nsh.button("Start", on_press=lambda: running.set(True)),
+    )
+
+nsh.run(Clock)
+"""
+    script = tmp_path / "app.py"
+    script.write_text(source.replace("LABEL", "v1"))
+    reloader = Reloader(script)
+
+    def shown(label):
+        for text in app.texts():
+            if text.startswith(label + " "):
+                return int(text.split()[1])
+        return None
+
+    def wait_until(check):
+        for _ in range(100):
+            if check():
+                return
+            time.sleep(0.02)
+        raise AssertionError(f"never happened; on screen: {app.texts()}")
+
+    with open(reloader.root()) as app:
+        app.press("Start")
+        wait_until(lambda: (shown("v1") or 100) < 95)
+        script.write_text(source.replace("LABEL", "v2"))
+        nsh.call_soon(reloader.reload)
+        wait_until(lambda: shown("v2") is not None)
+        first = shown("v2")
+        assert first < 95  # kept its value, not back to 100
+        wait_until(lambda: shown("v2") < first)  # and still counting down

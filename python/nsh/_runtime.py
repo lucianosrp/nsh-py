@@ -38,8 +38,8 @@ def run(
     and raises `KeyboardInterrupt`.
 
     `reload=True` redraws the window when you save the script (or a local
-    module it imports), keeping the window open: for development. State
-    made in components starts over on each reload. `python -m nsh.reload
+    module it imports), keeping the window open: for development. Signals
+    keep their values across reloads. `python -m nsh.reload
     app.py` does the same without changing the script.
     """
     if reload:
