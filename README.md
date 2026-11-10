@@ -1,49 +1,66 @@
 # nsh-py
 
-Native UIs in plain Python, powered by [Native Shell (NSH)](https://nsh.dev).
+<img width="1200" alt="nsh-py: native apps in plain Python, on macOS, Windows and Linux, powered by Native Shell. Two app windows: a focus timer and a live cluster-load monitor." src="docs/images/banner.png" />
 
-<table>
-<tr>
-<td>
+**Native apps in plain Python.** nsh-py brings [Native Shell (NSH)](https://nsh.dev) to Python: you write
+functions, signals and Tailwind classes, and get a real native window on macOS (AppKit), Windows (Win32) and
+Linux (GTK 4), with the platform's own text, input and accessibility. No web view, no JavaScript, nothing to
+compile: wheels come prebuilt.
+
+The monitor in the banner is the whole program below. A timer changes one signal, and every bar, label and the
+"Busiest" line follow it, with no callbacks to wire up:
 
 ```python
+import random
+
 import nsh
 
-def Poll():
-    votes = nsh.signal({"Python": 8, "Rust": 3, "Both": 5})
+SERVICES = ["api", "auth", "search", "billing", "email"]
 
-    @nsh.computed
-    def rows():
-        ranked = sorted(votes().items(), key=lambda kv: -kv[1])
-        return [{"language": k, "votes": n} for k, n in ranked]
 
-    def vote(choice):
-        return lambda: votes.update(lambda v: {**v, choice: v[choice] + 1})
+def jiggle(load):
+    return {s: min(98, max(2, n + random.randint(-15, 15))) for s, n in load.items()}
 
-    buttons = [nsh.button(k, on_press=vote(k)) for k in votes.value]
+
+def Monitor():
+    load = nsh.signal(dict.fromkeys(SERVICES, 40))
+    nsh.set_interval(0.5, lambda: load.update(jiggle))
+    busiest = nsh.computed(lambda: max(load(), key=load().get))
+
+    def row(service):
+        def pct():
+            return load()[service]
+
+        return nsh.view(
+            nsh.text(service, class_="w-16"),
+            nsh.progress(pct, class_="flex-1"),
+            nsh.text(lambda: f"{pct()}%", class_="w-10"),
+            class_="flex-row items-center gap-3",
+        )
+
     return nsh.card(
-        nsh.table(rows),
-        nsh.view(*buttons, class_="flex-row gap-2"),
-        title="Favourite language",
-        description=lambda: f"{sum(votes().values())} votes so far",
-        class_="m-6",
+        *[row(s) for s in SERVICES],
+        title="Cluster load",
+        description=lambda: f"Busiest: {busiest()}",
+        class_="m-6 w-96",
     )
 
-nsh.run(Poll, title="Poll")
+
+nsh.run(Monitor, title="Monitor")
 ```
 
-</td>
-<td>
+More in [`examples/`](examples/): a focus timer, a task list, a poll, a DataFrame viewer.
 
-<img src="docs/images/poll.png" alt="The poll app: a card titled Favourite language, 16 votes so far, a table of languages and votes, and three buttons" width="260">
+## Features
 
-</td>
-</tr>
-</table>
-
-A signal holds the votes. The table, the total and the order follow it,
-and a press re-sorts the table: no callbacks to wire up. The code is
-[`examples/poll.py`](examples/poll.py).
+- **Plain Python:** components are functions, state is `nsh.signal`, and anything that should update is a
+  lambda. Computeds, effects and timers are built in, and signals can be written from any thread.
+- **Native, not a web view:** NSH draws with each platform's own views, so apps start fast and feel at
+  home.
+- **Styled with Tailwind classes:** `class_="p-4 gap-2 rounded-xl"`, with a light and dark theme. Ready-made
+  components (`card`, `table`, `button`, `checkbox`, `switch`, `progress`, `input`) look right out of the box.
+- **Tested headless:** `nsh.testing` runs your app without a window, so pytest can press buttons and type text
+  in CI.
 
 The smallest app is a counter:
 
