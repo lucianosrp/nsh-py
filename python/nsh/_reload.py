@@ -251,10 +251,23 @@ class Reloader:
         return times
 
 
+def show_messages() -> None:
+    """Print nsh's INFO messages ("Reloaded app.py") to stderr, unless the
+    app set up logging itself: then its configuration decides."""
+    if logging.getLogger().handlers or logger.handlers:
+        return
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
+    logger.addHandler(handler)
+    if logger.getEffectiveLevel() > logging.INFO:
+        logger.setLevel(logging.INFO)
+
+
 def run_reloading(script: str | Path, root: Any = None, **options: Any) -> None:
     """Open the window for `script` and reload it whenever it changes."""
     from nsh import _core
 
+    show_messages()
     reloader = Reloader(script, root)
     reloader.watch()
     logger.info("Watching %s for changes", reloader.script.name)
@@ -272,7 +285,6 @@ def main(argv: list[str]) -> int:
     if not script.is_file():
         print(f"error: {argv[0]} is not a file", file=sys.stderr)
         return 2
-    logging.basicConfig(format="%(levelname)s %(name)s: %(message)s", level=logging.INFO)
     sys.argv = [str(script), *argv[1:]]
     # Run once for the root and the window options, then keep reloading.
     options: dict[str, Any] = {}
