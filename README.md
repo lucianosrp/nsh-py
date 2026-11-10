@@ -104,6 +104,20 @@ def Counter():
 `count.map(fn)` is a one-line computed. Full example:
 [`examples/counter_decorators.py`](examples/counter_decorators.py).
 
+## Hot reload
+
+Keep the window open while you edit: save the file and the app redraws
+with the new code.
+
+```sh
+python -m nsh.reload app.py        # or nsh.run(App, reload=True) in the script
+```
+
+Local modules the script imports reload too. State made inside components
+starts over on each reload, and a broken edit keeps the old view up and
+logs the error. In the Python-only setup, use
+`uv run --no-project python tools/run.py --reload app.py`.
+
 ## Install (experimental)
 
 nsh-py is not on PyPI. Prebuilt wheels (one per platform, Python 3.10+) are
