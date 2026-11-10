@@ -3,6 +3,7 @@
 import logging
 import pathlib
 import runpy
+import time
 
 import pytest
 
@@ -45,6 +46,40 @@ def test_poll_example():
         app.wait_for("22 votes so far")
         rows = app.texts()
         assert rows.index("Rust") < rows.index("Python")  # 9 votes beat 8
+
+
+def test_monitor_example():
+    Monitor = load_example("monitor")["Monitor"]
+    with open(Monitor) as app:
+        assert app.texts().count("40%") == 5
+        for _ in range(50):  # the timer moves the load twice a second
+            if app.texts().count("40%") < 5:
+                break
+            time.sleep(0.1)
+        assert app.texts().count("40%") < 5
+        assert any(t.startswith("Busiest: ") for t in app.texts())
+
+
+def test_focus_example():
+    Focus = load_example("focus")["Focus"]
+    with open(lambda: Focus(minutes=1)) as app:
+        assert app.shows("01:00")
+        app.press("Start")
+        app.wait_for("00:59")
+        app.press("Pause")
+        app.press("Reset")
+        app.wait_for("01:00")
+
+
+def test_tasks_example():
+    Tasks = load_example("tasks")["Tasks"]
+    with open(Tasks) as app:
+        assert app.shows("2 left")
+        app.type_text("id:new", "Water the plants\n")
+        app.wait_for("Water the plants")
+        app.wait_for("3 left")
+        app.press("role:checkbox[Water the plants]")
+        app.wait_for("2 left")
 
 
 def test_counter_decorators_example():
