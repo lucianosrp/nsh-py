@@ -262,10 +262,17 @@ nodes, bindings and the signals `render` made) and disposes the rest.
   once per key, and again (in place) only if the item under the key was
   replaced by one that isn't `==`. Signals read in `render` are read once,
   as in a component.
+- **Index.** `render(item)` is enough. With `index=True` it is
+  `render(item, index)`: the second argument is a callable wrapping
+  NSH's index signal: `index()` is the row's position, and a binding that
+  reads it updates when the row moves, without rendering again. Pass it
+  as a binding (`nsh.text(index)`) or call it in one
+  (`nsh.text(lambda: f"{index()}. {item}")`). It's a flag rather than a
+  look at `render`'s signature, which can't tell for `*args`, builtins
+  or decorated functions.
 - **Errors.** `items`, `key` and `render` run through `bridge::call`. A
   failed `items` keeps the rows shown (the last good list), so their state
   survives an error that may pass.
-- The row's index isn't passed to Python yet.
 
 ## Binding nsh-base components
 

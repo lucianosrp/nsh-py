@@ -23,6 +23,12 @@ def test_arguments_are_checked():
         nsh.each([1], str, key="id")
 
 
+def test_the_index_is_passed_only_when_asked():
+    assert nsh.each([1], lambda n: n).pass_index is False
+    assert nsh.each([1], lambda n, i: n).pass_index is False  # no guessing
+    assert nsh.each([1], lambda n, i: n, index=True).pass_index is True
+
+
 def test_static_items_are_read_once():
     made = nsh.each((n for n in range(3)), lambda n: nsh.text(f"n{n}"))
     assert made.items == (0, 1, 2)
@@ -53,6 +59,39 @@ def test_only_new_keys_render():
         app.wait_for("z")
         assert app.texts()[:4] == ["z", "a", "b", "c"]
     assert renders == [1, 2, 3, 0]
+
+
+def test_index_updates_after_reorder_and_insert():
+    renders = []
+
+    def render(word, index):
+        renders.append(word)
+        return nsh.text(lambda: f"{index()}. {word}")
+
+    def App():
+        words = nsh.signal(["a", "b", "c"])
+        return nsh.view(
+            nsh.each(words, render, index=True),
+            nsh.button("reverse", on_press=lambda: words.update(lambda ws: ws[::-1])),
+            nsh.button("insert", on_press=lambda: words.update(lambda ws: ["z", *ws])),
+        )
+
+    with open(App) as app:
+        assert app.texts()[:3] == ["0. a", "1. b", "2. c"]
+        app.press("reverse")
+        assert app.texts()[:3] == ["0. c", "1. b", "2. a"]
+        app.press("insert")
+        app.wait_for("0. z")
+        assert app.texts()[:4] == ["0. z", "1. c", "2. b", "3. a"]
+    assert renders == ["a", "b", "c", "z"]
+
+
+def test_one_arg_render_does_not_get_the_index():
+    def render(item):
+        return nsh.text(f"row {item}")
+
+    with open(lambda: nsh.view(nsh.each(["a", "b"], render))) as app:
+        assert app.texts()[:2] == ["row a", "row b"]
 
 
 def test_reorder_moves_rows_without_rendering():

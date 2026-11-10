@@ -25,21 +25,27 @@ from typing import Any, Generic, TypeVar
 
 T = TypeVar("T")
 
+Index = Callable[[], int]
+"""The row's position, as `render(item, index)` receives it. Call it in a
+binding: it updates when the row moves."""
+
 
 class Each(Generic[T]):
     """A keyed list of rows, as `nsh.each` makes it: a child of a view."""
 
-    __slots__ = ("items", "render", "key")
+    __slots__ = ("items", "render", "key", "pass_index")
 
     def __init__(
         self,
         items: Callable[[], Iterable[T]] | Iterable[T],
-        render: Callable[[T], Any],
+        render: Callable[..., Any],
         key: Callable[[T], Hashable] | None,
+        pass_index: bool,
     ) -> None:
         self.items = items
         self.render = render
         self.key = key
+        self.pass_index = pass_index
 
     def __repr__(self) -> str:
         return f"each({self.items!r}, {self.render!r}, key={self.key!r})"
@@ -47,15 +53,29 @@ class Each(Generic[T]):
 
 def each(
     items: Callable[[], Iterable[T]] | Iterable[T],
-    render: Callable[[T], Any],
+    render: Callable[[T], Any] | Callable[[T, Index], Any],
     *,
     key: Callable[[T], Hashable] | None = None,
+    index: bool = False,
 ) -> Each[T]:
     """A row per item of `items`, made by `render(item)`, known by `key(item)`.
 
     `items` is a signal, a computed or any callable returning an iterable
     (the list follows it), or a plain iterable (fixed). `render` returns a
     row's children, like a component: an element, a string, a list...
+
+    With `index=True`, `render` also gets the row's **index**, as a second
+    argument: a callable, `index()`, that is the position in the list and
+    updates when the row moves (the row is not rendered again). Use it in
+    a binding::
+
+        nsh.each(todos, lambda todo, index: nsh.text(
+            lambda: f"{index() + 1}. {todo['title']}"
+        ), key=lambda todo: todo["id"], index=True)
+
+    `nsh.text(index)` also works: a callable there is already a binding.
+    A read of `index()` inside `render` itself is once, like any other
+    value. Without `index=True`, `render(item)` gets the item only.
 
     Rows are matched by key, so a change only renders new keys::
 
@@ -89,4 +109,4 @@ def each(
         raise TypeError(f"each: key must be callable or None, not {type(key).__name__}")
     if not callable(items):
         items = tuple(items)  # fixed: read once, now (a generator too)
-    return Each(items, render, key)
+    return Each(items, render, key, index)

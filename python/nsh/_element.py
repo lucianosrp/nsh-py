@@ -30,6 +30,9 @@ StrProp = str | Callable[[], Any]
 BoolProp = bool | Callable[[], Any]
 """A bool, or a callable returning one (a binding)."""
 
+IntProp = int | Callable[[], Any]
+"""An int, or a callable returning one (a binding)."""
+
 NumProp = int | float | Callable[[], Any]
 """A number, or a callable returning one (a binding)."""
 

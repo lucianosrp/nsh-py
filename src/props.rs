@@ -148,3 +148,34 @@ pub(crate) fn with_bool(handler: Py<PyAny>) -> impl Fn(&bool) + 'static {
         bridge::call(|py| handler.call1(py, (*value,)).map(drop));
     }
 }
+
+/// An unsigned int prop: fixed, or bound to a callable. Bools are rejected
+/// (`True` is an `int` in Python). A bound call that fails is `0`.
+pub(crate) fn u32(obj: &Bound<'_, PyAny>) -> PyResult<Reactive<u32>> {
+    if obj.is_callable() {
+        let f = obj.clone().unbind();
+        Ok(Reactive::Bound(Rc::new(move || {
+            bridge::call(|py| extract_u32(&f.bind(py).call0()?)).unwrap_or_default()
+        })))
+    } else {
+        Ok(Reactive::Static(extract_u32(obj)?))
+    }
+}
+
+fn extract_u32(obj: &Bound<'_, PyAny>) -> PyResult<u32> {
+    if obj.is_instance_of::<pyo3::types::PyBool>() {
+        return Err(PyValueError::new_err(format!(
+            "expected an int, got bool ({})",
+            if obj.is_truthy()? { "True" } else { "False" }
+        )));
+    }
+    obj.extract::<u32>().map_err(|_| {
+        PyValueError::new_err(format!(
+            "expected an int in 0..={}, got {}",
+            u32::MAX,
+            obj.repr()
+                .map(|r| r.to_string())
+                .unwrap_or_else(|_| "?".into())
+        ))
+    })
+}
