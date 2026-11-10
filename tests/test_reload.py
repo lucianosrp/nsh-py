@@ -250,3 +250,31 @@ nsh.run(Clock)
         first = shown("v2")
         assert first < 95  # kept its value, not back to 100
         wait_until(lambda: shown("v2") < first)  # and still counting down
+
+
+CLASS_APP = """
+import nsh
+
+class App(nsh.Component):
+    count: int = 0
+
+    def view(self):
+        return nsh.view(
+            nsh.text(lambda: f"LABEL {self.count}"),
+            nsh.button("+1", on_press=lambda: setattr(self, "count", self.count + 1)),
+        )
+
+nsh.run(App)
+"""
+
+
+def test_a_class_components_fields_keep_their_values(tmp_path):
+    script = tmp_path / "app.py"
+    script.write_text(textwrap.dedent(CLASS_APP.replace("LABEL", "v1")))
+    reloader = Reloader(script)
+    with open(reloader.root()) as app:
+        app.press("+1")
+        app.wait_for("v1 1")
+        script.write_text(textwrap.dedent(CLASS_APP.replace("LABEL", "v2")))
+        nsh.call_soon(reloader.reload)
+        app.wait_for("v2 1")

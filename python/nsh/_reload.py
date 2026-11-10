@@ -108,10 +108,16 @@ class _Keeper:
         """The reload failed: the old view, and its signals, stay."""
         self.live, self.saved = self._previous, {}
 
-    def _make(self, value: Any) -> Signal[Any]:
-        frame = sys._getframe(2)  # the caller of nsh.signal
-        code = frame.f_code
-        name = f"{code.co_filename}:{getattr(code, 'co_qualname', code.co_name)}"
+    def _make(self, value: Any, where: tuple[str, Any] | None = None) -> Signal[Any]:
+        """`where` is (name, group) when the caller knows better than the
+        stack: a class component's fields are keyed by its class, and
+        grouped by its instance."""
+        if where is None:
+            frame = sys._getframe(2)  # the caller of nsh.signal
+            code = frame.f_code
+            name = f"{code.co_filename}:{getattr(code, 'co_qualname', code.co_name)}"
+        else:
+            name, frame = where
         last = self._frames.get(name)
         if last is not None and last[0] is frame:
             call, index = self._calls[name], last[1] + 1

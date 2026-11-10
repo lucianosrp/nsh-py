@@ -1,5 +1,6 @@
 """Native UIs in plain Python, powered by Native Shell (NSH)."""
 
+from nsh._component import Component
 from nsh._core import __version__
 from nsh._each import Each, each
 from nsh._element import Element
@@ -10,6 +11,7 @@ from nsh.components import button, card, table
 from nsh.primitives import checkbox, image, input, progress, scroll, switch, text, view
 
 __all__ = [
+    "Component",
     "Computed",
     "Each",
     "Effect",
