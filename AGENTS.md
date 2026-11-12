@@ -11,7 +11,7 @@ Python bindings for [Native Shell (NSH)](https://nsh.dev) by Longbridge: native 
 - **PyCon sprint:** an in-person sprint where contributors use macOS, Windows and Linux. Most contributors know little Rust, so the pure-Python layer (styled components on `nsh/base`, Tailwind classes, docs, examples, tests) is where most sprint work happens.
 - **Our own repo:** we don't fork NSH and don't depend on upstream changes. Exception: when we (the maintainers, not sprint contributors) hit a real NSH bug, we may file an issue or PR upstream. Sprint contributors never need to touch NSH; work around upstream bugs here and link the upstream issue. The web spike's nsh-core libc fix went upstream this way ([longbridge/nsh#896](https://github.com/longbridge/nsh/pull/896)).
 - **Distribution:** prebuilt abi3 wheels for Python 3.10+, like Polars, so end users never compile anything.
-- **Later: web.** A spike on branch `spike/web` runs the counter in a browser (Pyodide + nsh-platform-web); needs nightly Rust, a one-line nsh-core libc fix (merged upstream as longbridge/nsh#896, not yet in a release) and a small nsh.js hook (not filed upstream yet). Details in `web/README.md` on that branch. Not sprint scope.
+- **Later: web.** A spike on branch `spike/web` runs the counter in a browser (Pyodide + nsh-platform-web); needs nightly Rust, a one-line nsh-core libc fix (longbridge/nsh#896, released in NSH 0.5.0) and a small nsh.js hook (not filed upstream yet). Details in `web/README.md` on that branch. Not sprint scope.
 - **Later:** a Streamlit-style layer is a separate future project. Keep the layers clean so it can sit on top.
 - **Commits:** make atomic commits as work progresses.
 - **Delegation:** parallel work can be split across Sonnet (Claude) and Grok agents.
@@ -32,11 +32,11 @@ Bind NSH's **public Rust app API** through PyO3. Don't write a script host next 
 - **Testing:** `nsh-testing` provides `Headless::start(EngineConfig::new(Root::of::<App>()))` with `.press("text:..")`, `.type_text("id:..", ..)` and `.wait_for(..)`. It needs no display.
 
 ## Pins and toolchain
-- NSH crates are pinned to exactly `=0.4.0`. NSH's 0.x releases break the API (0.4.0 did too), and the compatibility freeze hasn't started yet. Bump deliberately, one PR per bump, and read the release's "Migrating" notes first.
+- NSH crates are pinned to exactly `=0.5.0`. NSH's 0.x releases break the API (0.4.0 and 0.5.0 did), and the compatibility freeze hasn't started yet. Bump deliberately, one PR per bump, and read the release's "Migrating" notes first.
 - ⚠ The crates.io crate named `nsh` is an unrelated shell. Depend on `nsh-core`, `nsh-base` and so on.
 - Rust 1.99.1 is pinned in `rust-toolchain.toml`. This machine's `stable` rustup toolchain is broken (no `rustc`), so use the pinned one.
 - PyO3 0.30: `Python::attach` / `py.detach` (the old names were `with_gil` / `allow_threads`).
-- NSH source is in `~/.cargo/registry/src/index.crates.io-*/nsh-*-0.4.0/`. Read it there, since it matches our pin. A checkout of NSH `main` (newer) at `/tmp/nsh-src` belongs to another session, so read it only and never build there.
+- NSH source is in `~/.cargo/registry/src/index.crates.io-*/nsh-*-0.5.0/`. Read it there, since it matches our pin. A checkout of NSH `main` (newer) at `/tmp/nsh-src` belongs to another session, so read it only and never build there.
 
 ## Build
 ```sh
@@ -45,7 +45,7 @@ source .venv/bin/activate && maturin develop      # about 65 s cold on Linux
 python -c "import nsh; print(nsh.__version__)"
 ```
 Or just `uv run python examples/counter.py` / `uv run pytest`: uv builds the extension itself and rebuilds when `src/**/*.rs`, `Cargo.*` or `pyproject.toml` change (`[tool.uv] cache-keys`). It builds the dev profile (`[tool.uv] config-settings`), so a Rust edit costs ~1-3 s; release (LTO) takes ~23 s incremental and is only for wheels (`maturin build --release`). Dev builds keep line tables only (deps none): the .so is ~110 MB instead of ~790 MB.
-Linux needs GTK 4.14+ and glibc 2.39 or newer (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch), plus clang/libclang. Ubuntu 22.04 and Debian 12 are too old.
+Linux needs GTK 4.14+, GStreamer 1.x (core + plugins-base: NSH 0.5.0's Linux backend links it) and glibc 2.39 or newer (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch), plus clang/libclang. Ubuntu 22.04 and Debian 12 are too old.
 
 ## Where code goes
 Behaviour in Rust, look and composition in Python: `python/nsh/components/` (Python only), `python/nsh/primitives/<kind>.py` ↔ `src/elements/<kind>.rs` (registered in `KINDS`), core = `_element/_signals/_runtime/testing` + `bridge/signal/app/headless`. Details: `docs/architecture.md`. Gotcha: `nsh.primitives.view` is the function (package re-export shadows the module); import module names from the module (`from nsh.primitives.view import KIND`).

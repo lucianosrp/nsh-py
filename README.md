@@ -220,8 +220,8 @@ nsh-py = { index = "nsh-py" }
 
 For the newest build of `main` (not a release), use the tag `dev-core`.
 
-Requirements: macOS 14+, Windows 10 1809+, or Linux with GTK 4.14+ and glibc
-2.39+ (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch). The Linux wheels are tagged
+Requirements: macOS 14+, Windows 10 1809+, or Linux with GTK 4.14+, GStreamer 1.x and
+glibc 2.39+ (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch). The Linux wheels are tagged
 `linux_x86_64` because GTK can't be bundled, which is another reason they live
 on GitHub and not on PyPI.
 
