@@ -16,6 +16,8 @@ import functools
 import http.server
 import logging
 import os
+import shutil
+import subprocess
 import sys
 import threading
 import webbrowser
@@ -99,7 +101,34 @@ def app_url(server: http.server.HTTPServer, script: Path) -> str:
     return f"http://localhost:{port}/?app={quote(APP_PREFIX[1:] + script.name)}"
 
 
-def serve(script: str | os.PathLike[str], *, port: int = 8766, open_browser: bool = True) -> None:
+def open_browser(url: str) -> None:
+    """Open `url` in the default browser, keeping its messages out of the terminal.
+
+    `webbrowser.open` starts the browser with our stdout and stderr, so
+    whatever it logs (Chrome's "Opening in existing browser session" and
+    its errors) lands under the app's own output. `BROWSER`, when set,
+    still goes through `webbrowser`, as it would anywhere else.
+    """
+    if os.environ.get("BROWSER"):
+        webbrowser.open(url)
+        return
+    if sys.platform == "win32":
+        os.startfile(url)  # type: ignore[attr-defined]  # noqa: S606
+        return
+    opener = "open" if sys.platform == "darwin" else shutil.which("xdg-open")
+    if opener is None:
+        webbrowser.open(url)
+        return
+    subprocess.Popen(
+        [opener, url],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,  # not stopped by Ctrl-C in our terminal
+    )
+
+
+def serve(script: str | os.PathLike[str], *, port: int = 8766, browser: bool = True) -> None:
     """Serve `script` to the browser and open it there; block until Ctrl-C.
 
     Ctrl-C stops the server and raises `KeyboardInterrupt`, as closing a
@@ -109,8 +138,8 @@ def serve(script: str | os.PathLike[str], *, port: int = 8766, open_browser: boo
     server = make_server(script, find_site(), port)
     url = app_url(server, script)
     print(f"nsh: {script.name} is at {url} (Ctrl-C to stop)", file=sys.stderr)
-    if open_browser:
-        threading.Thread(target=webbrowser.open, args=(url,), daemon=True).start()
+    if browser:
+        threading.Thread(target=open_browser, args=(url,), daemon=True).start()
     try:
         server.serve_forever()
     finally:

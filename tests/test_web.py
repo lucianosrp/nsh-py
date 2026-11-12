@@ -104,3 +104,15 @@ def test_tui_runs_in_the_terminal(monkeypatch):
     root = object()
     nsh.run(root)
     assert ran == [root]
+
+
+def test_the_browser_starts_without_our_terminal(monkeypatch):
+    started = []
+    monkeypatch.delenv("BROWSER", raising=False)
+    monkeypatch.setattr(sys, "platform", "linux")
+    monkeypatch.setattr(_web.shutil, "which", lambda name: "/usr/bin/xdg-open")
+    monkeypatch.setattr(_web.subprocess, "Popen", lambda args, **kw: started.append((args, kw)))
+    _web.open_browser("http://localhost:1/")
+    [(args, kw)] = started
+    assert args == ["/usr/bin/xdg-open", "http://localhost:1/"]
+    assert kw["stdout"] is kw["stderr"] is _web.subprocess.DEVNULL
