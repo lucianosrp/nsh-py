@@ -75,7 +75,9 @@
     await pyodide.loadPackagesFromImports(code);
     pyodide.runPython(code, { filename: app });
     player.runRust();
-    step("nsh-py " + pyodide.runPython("import nsh; nsh.__version__") + " on Pyodide " + pyodide.version);
+    // Running: the status line goes away (it stays for errors).
+    console.log("[nsh-py]", "nsh-py " + pyodide.runPython("import nsh; nsh.__version__") + " on Pyodide " + pyodide.version);
+    status.hidden = true;
   } catch (err) {
     step("error: " + (err?.message ?? err));
     console.error(err);
