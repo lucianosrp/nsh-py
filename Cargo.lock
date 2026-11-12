@@ -2435,6 +2435,7 @@ dependencies = [
 name = "nsh-py"
 version = "0.0.1"
 dependencies = [
+ "libc",
  "nsh-base",
  "nsh-core",
  "nsh-engine",
