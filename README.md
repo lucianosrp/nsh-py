@@ -187,6 +187,24 @@ initial value changes type starts over. A broken edit keeps the old view
 up and logs the error. In the Python-only setup, use
 `uv run --no-project python tools/run.py --reload app.py`.
 
+## In the terminal, or in the browser
+
+The same script runs in other places than a window. Pass `platform`, or
+set `NSH_PLATFORM` to run any script unchanged:
+
+```python
+nsh.run(App, platform="tui")   # in the terminal you run it from
+nsh.run(App, platform="web")   # in your browser (Pyodide)
+```
+
+```sh
+NSH_PLATFORM=tui uv run python examples/dataframe.py
+```
+
+The terminal draws the app on its character grid, with the keyboard and
+the mouse (Ctrl-C or Ctrl-Q quits). The browser needs the web build,
+which isn't released yet: see [web/README.md](web/README.md).
+
 ## Install (experimental)
 
 nsh-py is not on PyPI. Prebuilt wheels (one per platform, Python 3.10+) are

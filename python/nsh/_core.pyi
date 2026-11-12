@@ -14,6 +14,9 @@ def run(
 ) -> None:
     """Run the app until its window closes (src/app.rs)."""
 
+def run_tui(root: Callable[[], Any] | Any = None, *, mouse: bool = True) -> None:
+    """Run `root` in the terminal until it quits (src/tui.rs)."""
+
 def in_engine() -> bool:
     """Whether Python code running now was called by the engine."""
 

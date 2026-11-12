@@ -24,9 +24,6 @@ from urllib.parse import quote, unquote, urlsplit
 
 logger = logging.getLogger("nsh")
 
-PLATFORMS = ("native", "web")
-"""What `nsh.run(platform=...)` accepts (`None` means native)."""
-
 APP_PREFIX = "/app/"
 """Where the page finds the script's folder."""
 

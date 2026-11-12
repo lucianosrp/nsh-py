@@ -11,11 +11,15 @@ mod queue;
 mod schedule;
 mod signal;
 mod tree;
+#[cfg(not(target_os = "emscripten"))]
+mod tui;
 
 #[pymodule]
 fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_function(wrap_pyfunction!(app::run, m)?)?;
+    #[cfg(not(target_os = "emscripten"))]
+    m.add_function(wrap_pyfunction!(tui::run_tui, m)?)?;
     m.add_function(wrap_pyfunction!(signal::in_engine, m)?)?;
     m.add_function(wrap_pyfunction!(signal::notify_all, m)?)?;
     m.add_function(wrap_pyfunction!(elements::element_kinds, m)?)?;

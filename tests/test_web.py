@@ -73,12 +73,12 @@ def test_a_missing_web_build_says_how_to_make_it(tmp_path, monkeypatch):
 
 def test_an_unknown_platform_is_refused():
     with pytest.raises(ValueError, match="platform"):
-        nsh.run(lambda: None, platform="tui")
+        nsh.run(lambda: None, platform="gpui")
 
 
 def test_web_and_reload_are_refused_together(site, monkeypatch):
     monkeypatch.setattr(_web, "in_browser", lambda: False)
-    with pytest.raises(ValueError, match="refresh"):
+    with pytest.raises(ValueError, match="reload"):
         nsh.run(lambda: None, platform="web", reload=True)
 
 
@@ -89,3 +89,18 @@ def test_web_serves_the_main_script(site, script, monkeypatch):
     monkeypatch.setattr(sys.modules["__main__"], "__file__", str(script), raising=False)
     nsh.run(lambda: None, platform="web")
     assert served == [str(script)]
+
+
+def test_nsh_platform_picks_the_platform(monkeypatch):
+    monkeypatch.setenv("NSH_PLATFORM", "gpui")
+    with pytest.raises(ValueError, match="gpui"):
+        nsh.run(lambda: None)
+
+
+def test_tui_runs_in_the_terminal(monkeypatch):
+    ran = []
+    monkeypatch.setattr(nsh._runtime._core, "run_tui", ran.append)
+    monkeypatch.setenv("NSH_PLATFORM", "tui")
+    root = object()
+    nsh.run(root)
+    assert ran == [root]
