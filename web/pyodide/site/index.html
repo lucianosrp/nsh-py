@@ -70,7 +70,10 @@
     step("running " + app + "…");
     const source = await fetch(app);
     if (!source.ok) throw new Error(app + ": " + source.status);
-    pyodide.runPython(await source.text(), { filename: app });
+    const code = await source.text();
+    // Packages the app imports (pandas, numpy, ...) that Pyodide ships.
+    await pyodide.loadPackagesFromImports(code);
+    pyodide.runPython(code, { filename: app });
     player.runRust();
     step("nsh-py " + pyodide.runPython("import nsh; nsh.__version__") + " on Pyodide " + pyodide.version);
   } catch (err) {
