@@ -3,19 +3,14 @@
 nsh-py apps run in a browser: Pyodide runs the Python, and NSH's DOM
 backend renders it, with Python handlers, signals, `@nsh.computed`,
 `nsh.table`, `nsh.card` and timers. The same app file runs on desktop and
-on the web. NSH 0.4.0, Pyodide 314.0.7, stable Rust. Not a supported
+on the web. NSH 0.5.0, Pyodide 314.0.7, stable Rust. Not a supported
 target yet: no wheels, no CI.
 
-**Waiting on NSH:** `nsh-core` 0.4.0 doesn't compile for emscripten (it
-uses `libc` under `cfg(unix)` but only depends on it off wasm32, and
-emscripten is both). The one-line fix is merged upstream
-([longbridge/nsh#896](https://github.com/longbridge/nsh/pull/896)) but
-in no release yet. We don't patch NSH, so `build.sh` refuses to run on
-0.4.0. Once a release has the fix: bump the pins, drop the check in
-`build.sh`, and the build works as below. Until then, the branch
-`spike/web` has a local patch for trying it.
+NSH 0.5.0 has our emscripten libc fix
+([longbridge/nsh#896](https://github.com/longbridge/nsh/pull/896)), so
+this builds from the released crates with no patches.
 
-## Try it (after the next NSH release)
+## Try it
 
 ```sh
 sh web/pyodide/build.sh                      # one-time setup: see the script's header
@@ -42,11 +37,19 @@ built as one Pyodide side module (`wasm32-unknown-emscripten`). In the page:
    returns. `player.runRust()` starts it; the engine runs on the page's
    main thread (`LocalEngine`), pumped by JS.
 
-Verified in a browser (Pyodide 314.0.7 and, before the toolchain switch,
-0.29.5): the counter's +1/−1 call the Python handlers and the bound text
+Verified in a browser on NSH 0.5.0 (2026-11-12): the counter, the poll
+and the stopwatch (a class component with `nsh.set_interval`). Earlier, on
+0.4.0 (Pyodide 314.0.7 and, before the toolchain switch, 0.29.5): the counter's +1/−1 call the Python handlers and the bound text
 and `class_` update; in the poll, voting re-sorts the table and updates
 the vote count; `nsh.set_interval`/`set_timeout` fire, and
 `nsh.call_soon` called before the app starts runs once its pump does.
+
+## NSH 0.5.0 (2026-11-12)
+
+No Rust changes. `nsh.js` moved some browser code into `web/browser/*.js`
+modules, but `Player.load` is unchanged where we hook it, so
+`site/nsh.js` is 0.5.0's file with the same one `instantiate` option.
+The wheel is 7.0 MB (6.4 MB on 0.4.0).
 
 ## NSH 0.4.0 port (2026-11-10)
 
@@ -62,8 +65,7 @@ What changed from the 0.3.0 spike:
   `queue::begin()` so jobs posted before the page starts the app wait for
   it. Top-level Python run by the page is not "in the engine", so its
   signal writes go through the queue, as from a worker thread on desktop.
-- **libc.** `nsh-core` 0.4.0 still has the bug. `spike/web` patches a
-  local copy (`[patch.crates-io]`); `main` waits for a release.
+- **libc.** `nsh-core` 0.4.0 still had the bug (fixed in 0.5.0).
 - **Toolchain: now stable.** Pyodide 314.0.7 (Python 3.14, emscripten
   5.0.3, ABI `pyemscripten_2026_0`) and the repo's pinned Rust 1.99.1 with
   its `wasm32-unknown-emscripten` target. No nightly, no `-Zbuild-std`,
@@ -90,7 +92,6 @@ A cold release build takes about 3 minutes.
 - **Size.** 0.4.0's nsh-base has `parts` and `registry_of(..)`, so a
   web-only registry of the parts nsh-py uses no longer needs a patched
   nsh-platform-web. Then a size profile and wasm-opt (`web/PLAN.md`).
-- **The libc fix:** an NSH release with #896 (see the top).
 - **`nsh.js` patch.** To propose upstream (an "adopt this instance"
   option), or keep a tiny loader of our own.
 - **Not done:** headless tests on wasm (nsh-testing's driver is off

@@ -11,14 +11,10 @@
 #   ~/.cache/nshpy-web/pyb314/bin/pyodide xbuildenv install-emscripten
 #   rustup target add wasm32-unknown-emscripten   # in the repo: the pinned toolchain
 #
-# Needs an NSH release with longbridge/nsh#896 (nsh-core's libc on
-# emscripten): 0.4.0 doesn't build for the web. See web/README.md.
+# Needs NSH 0.5.0+, which has longbridge/nsh#896 (nsh-core's libc on
+# emscripten). See web/README.md.
 set -e
 cd "$(dirname "$0")/../.."
-if grep -q '^nsh-core = "=0.4.0"' Cargo.toml; then
-  echo "nsh-core 0.4.0 doesn't build for emscripten (longbridge/nsh#896 is unreleased): see web/README.md." >&2
-  exit 1
-fi
 . "$(ls -d ~/.cache/pyodide-build/.pyodide-xbuildenv-*/314.0.7/emsdk | head -1)/emsdk_env.sh" >/dev/null 2>&1
 CARGO_TARGET_DIR="$HOME/.cache/nshpy-web/target314" \
 PYO3_CROSS_PYTHON_VERSION=3.14 \
