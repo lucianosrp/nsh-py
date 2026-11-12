@@ -32,3 +32,16 @@ def test_other_errors_still_raise(monkeypatch):
     monkeypatch.setattr(_core, "run", broken)
     with pytest.raises(RuntimeError, match="boom"):
         nsh.run(lambda: None)
+
+
+def test_ctrl_c_returns_from_a_web_run(monkeypatch, tmp_path):
+    import sys
+
+    from nsh import _web
+
+    monkeypatch.setattr(_web, "serve", interrupted)
+    monkeypatch.setattr(_web, "in_browser", lambda: False)
+    monkeypatch.setattr(
+        sys.modules["__main__"], "__file__", str(tmp_path / "app.py"), raising=False
+    )
+    assert nsh.run(lambda: None, platform="web") is None

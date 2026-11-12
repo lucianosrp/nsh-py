@@ -94,6 +94,18 @@ def test_stopwatch_example():
         app.wait_for("text:/^00:00$/ >> nth=1")
 
 
+def test_dashboard_example():
+    App = load_example("dashboard")["App"]
+    with open(App, size=(1400, 1000)) as app:
+        assert app.shows("Recent orders") and app.shows("Today's goals")
+        app.wait_for("12 orders match")
+        app.press("Live orders")  # stop the stream, so counts hold still
+        app.press("New order")
+        app.wait_for("13 orders match")
+        app.press("Customers")
+        app.wait_for("text:/^Customers$/ >> nth=1")  # the header follows the sidebar
+
+
 def test_counter_decorators_example():
     Counter = load_example("counter_decorators")["Counter"]
     with open(Counter) as app:
