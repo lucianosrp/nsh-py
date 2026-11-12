@@ -45,7 +45,7 @@ source .venv/bin/activate && maturin develop      # about 65 s cold on Linux
 python -c "import nsh; print(nsh.__version__)"
 ```
 Or just `uv run python examples/counter.py` / `uv run pytest`: uv builds the extension itself and rebuilds when `src/**/*.rs`, `Cargo.*` or `pyproject.toml` change (`[tool.uv] cache-keys`). It builds the dev profile (`[tool.uv] config-settings`), so a Rust edit costs ~1-3 s; release (LTO) takes ~23 s incremental and is only for wheels (`maturin build --release`). Dev builds keep line tables only (deps none): the .so is ~110 MB instead of ~790 MB.
-Linux needs GTK 4.14+ and glibc 2.39 or newer (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch), plus clang/libclang. Ubuntu 22.04 and Debian 12 are too old.
+Linux needs GTK 4.14+, GStreamer 1.x (core + plugins-base: NSH 0.5.0's Linux backend links it) and glibc 2.39 or newer (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch), plus clang/libclang. Ubuntu 22.04 and Debian 12 are too old.
 
 ## Where code goes
 Behaviour in Rust, look and composition in Python: `python/nsh/components/` (Python only), `python/nsh/primitives/<kind>.py` ↔ `src/elements/<kind>.rs` (registered in `KINDS`), core = `_element/_signals/_runtime/testing` + `bridge/signal/app/headless`. Details: `docs/architecture.md`. Gotcha: `nsh.primitives.view` is the function (package re-export shadows the module); import module names from the module (`from nsh.primitives.view import KIND`).

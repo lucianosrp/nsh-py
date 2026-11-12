@@ -51,9 +51,15 @@ _RESET = "\033[0m"
 _CHANNEL_RE = re.compile(r"""(?m)^\s*channel\s*=\s*["']([^"']+)["']""")
 _OS_RELEASE_PATHS = ("/etc/os-release", "/usr/lib/os-release")
 
-APT_HINT = "sudo apt install clang libclang-dev libgtk-4-dev pkg-config"
-DNF_HINT = "sudo dnf install clang clang-devel gtk4-devel pkgconf-pkg-config"
-PACMAN_HINT = "sudo pacman -S clang gtk4 pkgconf"
+APT_HINT = (
+    "sudo apt install clang libclang-dev libgtk-4-dev pkg-config"
+    " libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev"
+)
+DNF_HINT = (
+    "sudo dnf install clang clang-devel gtk4-devel pkgconf-pkg-config"
+    " gstreamer1-devel gstreamer1-plugins-base-devel"
+)
+PACMAN_HINT = "sudo pacman -S clang gtk4 pkgconf gstreamer gst-plugins-base-libs"
 TOO_OLD_RELEASES = (
     "Ubuntu 22.04 and Debian 12 are too old (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch work)."
 )
@@ -531,6 +537,25 @@ def check_glibc() -> Result:
     )
 
 
+GSTREAMER_PACKAGES = ("gstreamer-1.0", "gstreamer-app-1.0", "gstreamer-audio-1.0")
+
+
+def check_gstreamer() -> Result:
+    """NSH 0.5.0's Linux backend links GStreamer (core, app, audio)."""
+    if not shutil.which("pkg-config"):
+        return Result("GStreamer", FAIL, "pkg-config not found", linux_install_hint())
+    proc = _run(["pkg-config", "--modversion", *GSTREAMER_PACKAGES])
+    if proc.returncode == 0:
+        version = (proc.stdout or "").split()[0] if proc.stdout else "?"
+        return Result("GStreamer", OK, version)
+    return Result(
+        "GStreamer",
+        FAIL,
+        "pkg-config did not find gstreamer-1.0 (app, audio)",
+        "Install the GStreamer and gst-plugins-base -dev packages.\n" + linux_install_hint(),
+    )
+
+
 def check_gtk4() -> Result:
     pkg = shutil.which("pkg-config")
     version_text = None
@@ -778,6 +803,7 @@ COMMON_CHECKS: list[CheckFn] = [
 LINUX_CHECKS: list[CheckFn] = [
     check_glibc,
     check_gtk4,
+    check_gstreamer,
     check_clang,
     check_libclang,
 ]
