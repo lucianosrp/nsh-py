@@ -76,7 +76,10 @@ def run(
         script = getattr(sys.modules["__main__"], "__file__", None)
         if script is None:
             raise RuntimeError('platform="web" needs the app to be run as a script file')
-        _web.serve(script)
+        try:
+            _web.serve(script)
+        except KeyboardInterrupt:
+            stopped()  # Ctrl-C stops the server, as it closes a window
         return
     if platform == "tui" and not _web.in_browser():
         _core.run_tui(root)

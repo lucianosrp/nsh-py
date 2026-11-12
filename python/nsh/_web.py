@@ -131,8 +131,8 @@ def open_browser(url: str) -> None:
 def serve(script: str | os.PathLike[str], *, port: int = 8766, browser: bool = True) -> None:
     """Serve `script` to the browser and open it there; block until Ctrl-C.
 
-    Ctrl-C stops the server and raises `KeyboardInterrupt`, as closing a
-    native app with it does.
+    Ctrl-C stops the server and raises `KeyboardInterrupt`, which
+    `nsh.run` turns into a quiet return, as for a window.
     """
     script = Path(script).resolve()
     server = make_server(script, find_site(), port)
