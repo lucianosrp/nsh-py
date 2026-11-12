@@ -34,6 +34,8 @@ PRODUCTS = {
 }
 STATUSES = ["Paid", "Paid", "Paid", "Pending", "Refunded"]
 NAV = ["Overview", "Orders", "Customers", "Products", "Settings"]
+ACCENT = "orange-500"
+"""The brand colour: the logo, the selected page, the main button, the goals."""
 REVENUE_GOAL = 6000.0
 ORDERS_GOAL = 40
 
@@ -60,18 +62,22 @@ def Sidebar(page):
                 name,
                 class_=lambda: (
                     "text-sm font-medium "
-                    + ("text-primary-foreground" if page() == name else "text-muted-foreground")
+                    + (f"text-{ACCENT}" if page() == name else "text-muted-foreground")
                 ),
             ),
             on_press=lambda: page.set(name),
             class_=lambda: (
-                "px-3 py-2 rounded-md " + ("bg-primary" if page() == name else "hover:bg-muted")
+                "px-3 py-2 rounded-md "
+                + (f"bg-{ACCENT}/15" if page() == name else "hover:bg-muted")
             ),
         )
 
     return nsh.view(
         nsh.view(
-            nsh.view(class_="w-8 h-8 rounded-lg bg-primary"),
+            nsh.view(
+                nsh.text("O", class_="text-base font-bold text-white"),
+                class_=f"w-8 h-8 rounded-lg bg-{ACCENT} items-center justify-center",
+            ),
             nsh.text("Orbit", class_="text-lg font-bold text-foreground"),
             class_="flex-row items-center gap-2 px-3 pb-6",
         ),
@@ -82,12 +88,17 @@ def Sidebar(page):
     )
 
 
-def Kpi(label, value, note):
+def Kpi(label, value, note, color):
+    """A figure with a coloured dot and a coloured note; `color` is a Tailwind colour."""
     return nsh.card(
-        nsh.text(label, class_="text-sm text-muted-foreground"),
+        nsh.view(
+            nsh.view(class_=f"w-2 h-2 rounded-full bg-{color}"),
+            nsh.text(label, class_="text-sm text-muted-foreground"),
+            class_="flex-row items-center gap-2",
+        ),
         nsh.text(value, class_="text-2xl font-bold text-card-foreground"),
-        nsh.text(note, class_="text-xs text-muted-foreground"),
-        class_="flex-1 min-w-40 gap-1 p-5",
+        nsh.text(note, class_=f"text-xs font-medium text-{color}"),
+        class_=f"flex-1 min-w-40 gap-1 p-5 border-t-4 border-t-{color}",
     )
 
 
@@ -135,18 +146,33 @@ def App():
             placeholder="Search orders…",
             class_="w-64 border border-border rounded-md px-3 py-2 text-foreground",
         ),
-        nsh.button("New order", on_press=add_order),
+        nsh.button(
+            "New order",
+            on_press=add_order,
+            class_=f"bg-{ACCENT} hover:bg-orange-600 active:bg-orange-700",
+        ),
         class_="flex-row items-center gap-3 px-8 py-6 border-b border-border",
     )
 
     kpis = nsh.view(
-        Kpi("Revenue", lambda: f"${revenue():,.0f}", lambda: f"{len(paid())} paid orders"),
-        Kpi("Orders", lambda: f"{len(orders())}", "since this morning"),
         Kpi(
-            "Average order", lambda: f"${revenue() / max(len(paid()), 1):,.2f}", "paid orders only"
+            "Revenue",
+            lambda: f"${revenue():,.0f}",
+            lambda: f"{len(paid())} paid orders",
+            ACCENT,
+        ),
+        Kpi("Orders", lambda: f"{len(orders())}", "since this morning", "sky-500"),
+        Kpi(
+            "Average order",
+            lambda: f"${revenue() / max(len(paid()), 1):,.2f}",
+            "paid orders only",
+            "emerald-500",
         ),
         Kpi(
-            "Refunds", lambda: f"{sum(o['status'] == 'Refunded' for o in orders())}", "this session"
+            "Refunds",
+            lambda: f"{sum(o['status'] == 'Refunded' for o in orders())}",
+            "this session",
+            "rose-500",
         ),
         class_="flex-row flex-wrap gap-4",
     )
@@ -169,11 +195,13 @@ def App():
             nsh.progress(
                 lambda: min(revenue(), REVENUE_GOAL),
                 max=REVENUE_GOAL,
+                color=ACCENT,
                 label=lambda: f"Revenue ${revenue():,.0f} of ${REVENUE_GOAL:,.0f}",
             ),
             nsh.progress(
                 lambda: min(len(orders()), ORDERS_GOAL),
                 max=ORDERS_GOAL,
+                color="sky-500",
                 label=lambda: f"Orders {len(orders())} of {ORDERS_GOAL}",
             ),
             title="Today's goals",
