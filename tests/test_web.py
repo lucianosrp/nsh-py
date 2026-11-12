@@ -26,7 +26,7 @@ def site(tmp_path, monkeypatch):
 def script(tmp_path):
     app = tmp_path / "myapp"
     app.mkdir()
-    (app / "app.py").write_text("print('hi')\n")
+    (app / "app.py").write_bytes(b"print('hi')\n")  # no \r\n on Windows
     (tmp_path / "secret.txt").write_text("not served")
     return app / "app.py"
 
