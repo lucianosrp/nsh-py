@@ -30,6 +30,7 @@ def run(
     size: tuple[int, int] = (480, 640),
     app_id: str = "dev.nsh_py.app",
     reload: bool = False,
+    platform: str | None = None,
 ) -> None:
     """Open a window showing `root` and run until it closes.
 
@@ -42,10 +43,29 @@ def run(
     module it imports), keeping the window open: for development. Signals
     keep their values across reloads. `python -m nsh.reload
     app.py` does the same without changing the script.
-    """
-    if reload:
-        import sys
 
+    `platform="web"` shows the app in your browser instead of a window:
+    the browser runs the script with Pyodide. Save and refresh the page to
+    see changes. It needs the web build of nsh-py (`web/README.md`). In
+    the browser itself, `nsh.run` always runs there, so the same script
+    works in both places. The default, `None` (or `"native"`), is this
+    OS's own UI: GTK, AppKit or Win32.
+    """
+    import sys
+
+    from nsh import _web
+
+    if platform not in (None, *_web.PLATFORMS):
+        raise ValueError(f"platform must be one of {_web.PLATFORMS!r} or None, not {platform!r}")
+    if platform == "web" and not _web.in_browser():
+        if reload:
+            raise ValueError('reload=True doesn\'t work with platform="web": refresh the page')
+        script = getattr(sys.modules["__main__"], "__file__", None)
+        if script is None:
+            raise RuntimeError('platform="web" needs the app to be run as a script file')
+        _web.serve(script)
+        return
+    if reload:
         from nsh._reload import run_reloading
 
         script = getattr(sys.modules["__main__"], "__file__", None)

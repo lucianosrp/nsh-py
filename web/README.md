@@ -19,6 +19,18 @@ python3 -m http.server -d web/pyodide/site 8766
 # http://localhost:8766/?app=examples/poll.py any of the repo's examples
 ```
 
+Or from your own script: pass `platform="web"` to `nsh.run` and run it
+as usual. It serves the page and the script's folder on localhost and
+opens your browser; save and refresh to see changes. In the browser,
+`nsh.run` ignores it, so the same file works in both places.
+
+```python
+nsh.run(App, platform="web")                 # uv run python app.py -> a browser tab
+```
+
+The web wheel carries its own copy of `nsh`'s Python: after changing
+`python/nsh/`, run `build.sh` again (quick when no Rust changed).
+
 ## How it works (`web/pyodide/`)
 
 The whole extension (PyO3 + NSH core/engine/base + `nsh-platform-web`) is
