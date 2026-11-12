@@ -78,7 +78,7 @@ def Sidebar(page):
         *[item(name) for name in NAV],
         nsh.view(class_="flex-1"),
         nsh.text("nsh-py demo store", class_="text-xs text-muted-foreground px-3"),
-        class_="w-56 p-4 gap-1 border-r border-border bg-card",
+        class_="w-56 max-lg:hidden p-4 gap-1 border-r border-border bg-card",  # wide windows only
     )
 
 
@@ -87,7 +87,7 @@ def Kpi(label, value, note):
         nsh.text(label, class_="text-sm text-muted-foreground"),
         nsh.text(value, class_="text-2xl font-bold text-card-foreground"),
         nsh.text(note, class_="text-xs text-muted-foreground"),
-        class_="flex-1 gap-1 p-5",
+        class_="flex-1 min-w-40 gap-1 p-5",
     )
 
 
@@ -148,7 +148,7 @@ def App():
         Kpi(
             "Refunds", lambda: f"{sum(o['status'] == 'Refunded' for o in orders())}", "this session"
         ),
-        class_="flex-row gap-4",
+        class_="flex-row flex-wrap gap-4",
     )
 
     recent = nsh.card(
@@ -161,7 +161,7 @@ def App():
         ),
         title="Recent orders",
         description=lambda: f"{len(shown())} orders match",
-        class_="flex-1",
+        class_="xl:flex-1",
     )
 
     side = nsh.view(
@@ -185,13 +185,14 @@ def App():
             title="Settings",
             class_="gap-3",
         ),
-        class_="w-80 gap-4",
+        class_="xl:w-80 gap-4",
     )
 
     main = nsh.scroll(
         nsh.view(
             kpis,
-            nsh.view(recent, side, class_="flex-row gap-4 items-start"),
+            # Side by side on wide windows, stacked on narrower ones.
+            nsh.view(recent, side, class_="flex-col xl:flex-row gap-4 xl:items-start"),
             class_="p-8 gap-6",
         ),
         class_="flex-1",
