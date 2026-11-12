@@ -26,6 +26,7 @@ def progress(
     *,
     max: float = 100,  # noqa: A002
     indeterminate: BoolProp | None = None,
+    color: str | None = None,
     class_: StrProp | None = None,
     test_id: str | None = None,
 ) -> Element:
@@ -36,21 +37,27 @@ def progress(
     It is held between 0 and `max`. `indeterminate` (a bool or a callable)
     shows that work is under way with no known end: no value, a short bar.
     `class_` takes Tailwind classes for where it sits (`"w-64"`): they go
-    on a view around it, as `nsh.checkbox`'s do.
+    on a view around it, as `nsh.checkbox`'s do. `color` is a Tailwind
+    colour for the bar instead of the theme's primary one (`"orange-500"`);
+    the track is the same colour, faded.
 
         done = nsh.signal(0.0)
         nsh.progress(done, lambda: f"{done():.0%}", max=1.0)
     """
     if not max > 0:
         raise ValueError(f"progress max must be a positive number, not {max!r}")
+    track, indicator = TRACK_CLASS, INDICATOR_CLASS
+    if color is not None:
+        track = track.replace("bg-primary/20", f"bg-{color}/20")
+        indicator = indicator.replace("bg-primary", f"bg-{color}")
     if callable(indeterminate):
         indicator_class = lambda: (  # noqa: E731
-            f"{INDICATOR_CLASS} {INDETERMINATE_CLASS}" if indeterminate() else INDICATOR_CLASS
+            f"{indicator} {INDETERMINATE_CLASS}" if indeterminate() else indicator
         )
     elif indeterminate:
-        indicator_class = f"{INDICATOR_CLASS} {INDETERMINATE_CLASS}"
+        indicator_class = f"{indicator} {INDETERMINATE_CLASS}"
     else:
-        indicator_class = INDICATOR_CLASS
+        indicator_class = indicator
     children: list[Child] = []
     if label is not None:
         children.append(text(label, class_=LABEL_CLASS))
@@ -60,7 +67,7 @@ def progress(
             value=value,
             max=max,
             indeterminate=indeterminate,
-            track_class=TRACK_CLASS,
+            track_class=track,
             indicator_class=indicator_class,
             class_=class_,
             test_id=test_id,
