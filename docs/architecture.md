@@ -288,7 +288,7 @@ and what is different.
   feed it straight from Python), a slot setter that takes an element
   (`.indicator(..)`), `.child(..)` for the children, and one listener per
   event (`.on_change(|value: &bool| ..)`). Read the component's file in
-  `nsh-base-0.4.0/src/` for its props and events; nsh-engine's
+  `nsh-base-0.5.0/src/` for its props and events; nsh-engine's
   `tests/engine/rust_styles.rs` styles a switch and a checkbox from Rust.
 - **The component has no look.** nsh-base owns the behaviour (presses,
   keys, the disabled state, the role and value for screen readers) and
