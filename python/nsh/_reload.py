@@ -273,6 +273,10 @@ def run_reloading(script: str | Path, root: Any = None, **options: Any) -> None:
     logger.info("Watching %s for changes", reloader.script.name)
     try:
         _core.run(reloader.root(), **options)
+    except KeyboardInterrupt:
+        from nsh._runtime import stopped
+
+        stopped()  # Ctrl-C closes the app, as in nsh.run
     finally:
         reloader.stop()
 

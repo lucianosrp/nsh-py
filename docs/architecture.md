@@ -69,7 +69,9 @@ engine thread "nsh-engine" ──► AppRoot::view → Python App() → Element 
 - **Ctrl-C:** Python's SIGINT handler only sets a flag. `check_signals`
   runs it on the main thread, which is busy in the GTK loop, so a GLib
   timer checks every 100 ms. On `KeyboardInterrupt` it quits the
-  `gio::Application`, and `nsh.run()` re-raises it. macOS and Windows
+  `gio::Application`, and `_core.run` re-raises it; `nsh.run()` catches
+  it and returns, so Ctrl-C closes the app like the window's close button
+  does, with no traceback. macOS and Windows
   don't have this yet (they need an AppKit/Win32 timer).
 - **Other threads:** any Python thread can reach the app through the
   engine-thread queue (next section). `nsh.call_soon(fn, *args)` runs `fn`

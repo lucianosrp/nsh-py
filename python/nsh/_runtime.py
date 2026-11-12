@@ -34,8 +34,9 @@ def run(
     """Open a window showing `root` and run until it closes.
 
     `root` is a component (a function returning elements) or elements.
-    Blocks the calling thread, which must be the main thread. Ctrl-C quits
-    and raises `KeyboardInterrupt`.
+    Blocks the calling thread, which must be the main thread. Ctrl-C in
+    the terminal closes the app and returns, as closing the window does:
+    no `KeyboardInterrupt` traceback.
 
     `reload=True` redraws the window when you save the script (or a local
     module it imports), keeping the window open: for development. Signals
@@ -52,4 +53,12 @@ def run(
             raise RuntimeError("reload=True needs the app to be run as a script file")
         run_reloading(script, root, title=title, size=size, app_id=app_id)
         return
-    _core.run(root, title=title, size=size, app_id=app_id)
+    try:
+        _core.run(root, title=title, size=size, app_id=app_id)
+    except KeyboardInterrupt:
+        stopped()
+
+
+def stopped() -> None:
+    """Ctrl-C closed the app. That's how a terminal app is stopped, not an error."""
+    logger.debug("Ctrl-C: the app was closed")

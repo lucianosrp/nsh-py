@@ -118,7 +118,7 @@ pub(crate) fn app_root() -> nsh_core::element::Root {
 }
 
 /// Runs the app until its window closes. Raises `KeyboardInterrupt` if
-/// Ctrl-C stopped it.
+/// Ctrl-C stopped it (`nsh.run` turns that into a quiet return).
 #[pyfunction]
 #[pyo3(signature = (root=None, *, title="nsh".to_owned(), size=(480, 640), app_id="dev.nsh_py.app".to_owned()))]
 pub(crate) fn run(
