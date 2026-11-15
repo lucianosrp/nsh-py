@@ -1,5 +1,8 @@
 """Ctrl-C closes the app quietly: `nsh.run` returns, with no traceback."""
 
+import os
+import sys
+
 import pytest
 
 import nsh
@@ -35,8 +38,6 @@ def test_other_errors_still_raise(monkeypatch):
 
 
 def test_ctrl_c_returns_from_a_web_run(monkeypatch, tmp_path):
-    import sys
-
     from nsh import _web
 
     monkeypatch.setattr(_web, "serve", interrupted)
@@ -45,3 +46,39 @@ def test_ctrl_c_returns_from_a_web_run(monkeypatch, tmp_path):
         sys.modules["__main__"], "__file__", str(tmp_path / "app.py"), raising=False
     )
     assert nsh.run(lambda: None, platform="web") is None
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Ctrl-C not wired on Windows yet")
+@pytest.mark.skipif(
+    sys.platform.startswith("linux")
+    and not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")),
+    reason="no display",
+)
+@pytest.mark.gui
+def test_ctrl_c_gui():
+    import select
+    import signal
+    import subprocess
+
+    script = """
+import nsh
+def App():
+    nsh.set_timeout(0, lambda: print("READY", flush=True))
+    return nsh.text("hi")
+nsh.run(App)
+"""
+    proc = subprocess.Popen(
+        [sys.executable, "-c", script],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        assert select.select([proc.stdout], [], [], 15)[0], proc.stderr.read()
+        assert proc.stdout.readline() == b"READY\n", proc.stderr.read()
+        proc.send_signal(signal.SIGINT)
+        _, err = proc.communicate(timeout=5)
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+
+    assert proc.returncode == 0, err
