@@ -56,20 +56,19 @@ def new_order() -> dict:
 
 
 def Sidebar(page):
-    def item(name):
-        return nsh.view(
-            nsh.text(
-                name,
-                class_=lambda: (
-                    "text-sm font-medium "
-                    + (f"text-{ACCENT}" if page() == name else "text-muted-foreground")
-                ),
-            ),
-            on_press=lambda: page.set(name),
-            class_=lambda: (
-                "px-3 py-2 rounded-md "
-                + (f"bg-{ACCENT}/15" if page() == name else "hover:bg-muted")
-            ),
+    tab_class = (
+        f"px-3 py-2 rounded-md text-sm font-medium text-muted-foreground "
+        f"hover:bg-muted selected:bg-{ACCENT}/15 selected:hover:bg-{ACCENT}/15 "
+        f"selected:text-{ACCENT}"
+    )
+
+    def nav_tab(name):
+        return nsh.tab(
+            name,
+            selected=lambda: page() == name,
+            on_press=page.setter(name),
+            class_=tab_class,
+            test_id=f"nav-{name}",
         )
 
     return nsh.view(
@@ -81,7 +80,12 @@ def Sidebar(page):
             nsh.text("Orbit", class_="text-lg font-bold text-foreground"),
             class_="flex-row items-center gap-2 px-3 pb-6",
         ),
-        *[item(name) for name in NAV],
+        nsh.tabs(
+            *[nav_tab(name) for name in NAV],
+            class_="flex-col gap-1 border-b-0",
+            indicator_class=None,
+            test_id="nav",
+        ),
         nsh.view(class_="flex-1"),
         nsh.text("nsh-py demo store", class_="text-xs text-muted-foreground px-3"),
         class_="w-56 max-lg:hidden p-4 gap-1 border-r border-border bg-card",  # wide windows only
