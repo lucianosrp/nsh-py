@@ -6,9 +6,10 @@ no Rust needed. To add one: `components/<name>.py`, export it here and in
 See CONTRIBUTING.md ("Add a component").
 """
 
+from nsh.components.avatar import avatar
 from nsh.components.button import button
 from nsh.components.card import card
 from nsh.components.separator import separator
 from nsh.components.table import table
 
-__all__ = ["button", "card", "separator", "table"]
+__all__ = ["avatar", "button", "card", "separator", "table"]
