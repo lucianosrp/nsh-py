@@ -338,3 +338,25 @@ def test_form_example():
         app.press("id:send")  # no email: nothing is sent
         app.wait_for("Hello, Bo")
         assert app.shows("Welcome, Ada! We'll write to ada@example.org.")
+
+def test_settings_example():
+    Settings = load_example("settings")["SettingsPage"]
+    with open(Settings) as app:
+        app.type_text("id:email", "test@example.com")
+        app.type_text("id:username", "johnsmith")
+        app.press("id:toggle1")
+        app.press("id:toggle2")
+        app.press("id:toggle3")
+        app.press("id:checkbox1")
+        app.press("id:checkbox2")
+
+        with pytest.raises(RuntimeError):
+            app.press("id:checkbox3")
+
+        # NOTE: id:togglebutton enables id:checkbox3
+        app.press("id:togglebutton")
+        app.press("id:checkbox3")
+
+        app.press("id:savebutton")
+        # app.press("id:deletebutton")
+        app.press("id:quitbutton")
