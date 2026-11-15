@@ -9,6 +9,7 @@ See CONTRIBUTING.md ("Add a component").
 from nsh.components.badge import badge
 from nsh.components.button import button
 from nsh.components.card import card
+from nsh.components.separator import separator
 from nsh.components.table import table
 
-__all__ = ["badge", "button", "card", "table"]
+__all__ = ["badge", "button", "card", "separator", "table"]
