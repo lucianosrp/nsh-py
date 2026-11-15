@@ -209,17 +209,20 @@ which isn't released yet: see [web/README.md](web/README.md).
 
 nsh-py is not on PyPI. Prebuilt wheels (one per platform, Python 3.10+) are
 published on [GitHub Releases](https://github.com/lucianosrp/nsh-py/releases),
-and you install them with [uv](https://docs.astral.sh/uv/) pointed at a release:
+and you install them with [uv](https://docs.astral.sh/uv/) pointed at a release.
+There is no tagged release yet, so for now use `dev-core`, the rolling build
+of `main`:
 
 ```sh
 uv pip install nsh-py --no-index \
-  --find-links https://github.com/lucianosrp/nsh-py/releases/expanded_assets/latest
+  --find-links https://github.com/lucianosrp/nsh-py/releases/expanded_assets/dev-core
 ```
 
 `--no-index` keeps uv off PyPI: nsh-py has no dependencies, and the name
 `nsh-py` isn't ours on PyPI, so a package uploaded there under that name must
-never win. `latest` is a rolling tag that always holds the newest release; to
-pin one, use its tag instead (`.../expanded_assets/v0.1.0`).
+never win. `dev-core` moves with every push to `main`. Once releases exist,
+`latest` will be a rolling tag that always holds the newest one, and you can
+pin one by its tag (`.../expanded_assets/v0.1.0`).
 
 In a uv project, declare the release as an *explicit* index and pin nsh-py to
 it, so uv takes nsh-py from GitHub only (your other dependencies still come
@@ -228,15 +231,13 @@ from PyPI), then `uv add nsh-py`:
 ```toml
 [[tool.uv.index]]
 name = "nsh-py"
-url = "https://github.com/lucianosrp/nsh-py/releases/expanded_assets/latest"
+url = "https://github.com/lucianosrp/nsh-py/releases/expanded_assets/dev-core"
 format = "flat"
 explicit = true
 
 [tool.uv.sources]
 nsh-py = { index = "nsh-py" }
 ```
-
-For the newest build of `main` (not a release), use the tag `dev-core`.
 
 Requirements: macOS 14+, Windows 10 1809+, or Linux with GTK 4.14+, GStreamer 1.x and
 glibc 2.39+ (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch). The Linux wheels are tagged
