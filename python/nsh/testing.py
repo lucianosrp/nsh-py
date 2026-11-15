@@ -20,18 +20,30 @@ is fine as it is.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, NamedTuple
 
 from nsh import _core
+
+
+class WindowState(NamedTuple):
+    """What the platform reports of a window (`App.window`)."""
+
+    visible: bool
+    minimized: bool
+    focused: bool
 
 
 class App:
     """A running headless app. Use it as a context manager, or `close()`."""
 
     def __init__(
-        self, root: Callable[[], Any] | Any = None, *, size: tuple[float, float] = (390, 844)
+        self,
+        root: Callable[[], Any] | Any = None,
+        *,
+        size: tuple[float, float] = (390, 844),
+        desktop: bool = False,
     ):
-        self._app = _core.Headless(root, size=size)
+        self._app = _core.Headless(root, size=size, desktop=desktop)
 
     def press(self, selector: str) -> None:
         """Press what `selector` finds, then wait for the app to settle."""
@@ -64,6 +76,13 @@ class App:
         along its axis (negative: back), then wait for the app to settle."""
         self._app.scroll(selector, distance)
 
+    def window(self, window_id: str = "main") -> WindowState | None:
+        """What the platform reports of window `window_id` (`"main"`): visible,
+        minimized, focused. `None` while it isn't open. Needs an app
+        opened with `desktop=True` (a phone has no windows)."""
+        state = self._app.window_state(window_id)
+        return None if state is None else WindowState(*state)
+
     def close(self) -> None:
         """Stop the app's engine."""
         self._app.close()
@@ -76,5 +95,7 @@ class App:
 
 
 def open(root: Callable[[], Any] | Any = None, **kwargs: Any) -> App:  # noqa: A001
-    """Start `root` headless (as `nsh.run` takes it)."""
+    """Start `root` headless (as `nsh.run` takes it). `size=(w, h)` sets
+    the viewport; `desktop=True` runs it as a desktop app, with a main
+    window (`App.window`)."""
     return App(root, **kwargs)

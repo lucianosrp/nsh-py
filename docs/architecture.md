@@ -18,6 +18,7 @@ python/nsh/
   _each.py             each(): keyed lists (a marker, not a kind)            │
   _runtime.py          run(), report_exception()                             │ (maintainers)
   _engine.py           call_soon, effect, set_timeout, set_interval          │
+  _window.py           quit(), current_window()                              │
   testing.py           headless apps for tests                               ┘
 src/
   elements/            one file per kind (view.rs, text.rs); mod.rs has the KINDS table
@@ -29,6 +30,7 @@ src/
   queue.rs             the engine-thread queue: call_soon, posting jobs      │
   schedule.rs          Effect and Timer: NSH effects and timers for Python   │
   app.rs               run(): the window, the root component, Ctrl-C         │
+  window.rs            quit and window handles (close, hide, minimize)       │
   headless.rs          nsh-testing's driver for nsh.testing                  ┘
 tests/
   primitives/, components/   one test file per primitive / component (headless)

@@ -4,7 +4,10 @@
 
 use std::{sync::Mutex, time::Duration};
 
-use nsh_core::geometry::{Points, Size};
+use nsh_core::{
+    geometry::{Points, Size},
+    platform::{Idiom, Os},
+};
 use nsh_engine::EngineConfig;
 use nsh_testing::Headless as Driver;
 use pyo3::{
@@ -41,15 +44,26 @@ impl Headless {
 #[pymethods]
 impl Headless {
     /// Starts `root` (as `nsh.run` takes it) and waits for its first frame.
+    /// `desktop`: it runs as a Linux desktop app, with a main window whose
+    /// state `window_state` reports (else NSH's default, a phone).
     #[new]
-    #[pyo3(signature = (root=None, *, size=(390.0, 844.0)))]
-    fn new(py: Python<'_>, root: Option<Py<PyAny>>, size: (f32, f32)) -> PyResult<Self> {
+    #[pyo3(signature = (root=None, *, size=(390.0, 844.0), desktop=false))]
+    fn new(
+        py: Python<'_>,
+        root: Option<Py<PyAny>>,
+        size: (f32, f32),
+        desktop: bool,
+    ) -> PyResult<Self> {
         crate::app::set_root(root);
         crate::queue::begin();
         let driver = py.detach(|| {
             let mut config = EngineConfig::new(crate::app::app_root());
             config.ui_sets = vec![nsh_base::registry()];
             config.viewport = Size::new(Points(size.0), Points(size.1));
+            if desktop {
+                config.environment.os = Os::Linux;
+                config.environment.idiom = Idiom::Desktop;
+            }
             let mut driver = Driver::start(config)
                 .map_err(|e| PyRuntimeError::new_err(format!("could not start: {e}")))?;
             driver.first_render().map_err(PyTimeoutError::new_err)?;
@@ -134,6 +148,22 @@ impl Headless {
             value
                 .map(|v| v.map(str::to_owned))
                 .map_err(PyRuntimeError::new_err)
+        })
+    }
+
+    /// What the platform reports of window `window_id` (`"main"`): whether
+    /// it is visible, minimized and focused; `None` while it is not open.
+    #[pyo3(signature = (window_id="main".to_owned()))]
+    fn window_state(
+        &self,
+        py: Python<'_>,
+        window_id: String,
+    ) -> PyResult<Option<(bool, bool, bool)>> {
+        self.with(py, |d| {
+            let state = d
+                .window_state(&window_id)
+                .map_err(PyRuntimeError::new_err)?;
+            Ok(state.map(|s| (s.visible, s.minimized, s.focused)))
         })
     }
 
