@@ -8,6 +8,7 @@ See CONTRIBUTING.md ("Add a component").
 
 from nsh.components.button import button
 from nsh.components.card import card
+from nsh.components.separator import separator
 from nsh.components.table import table
 
-__all__ = ["button", "card", "table"]
+__all__ = ["button", "card", "separator", "table"]
