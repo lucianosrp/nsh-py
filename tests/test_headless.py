@@ -82,6 +82,19 @@ def test_tasks_example():
         app.wait_for("2 left")
 
 
+def test_kanban_example():
+    Kanban = load_example("kanban")["Kanban"]
+    with open(Kanban, size=(900, 560)) as app:
+        assert app.shows("Buy milk") and app.texts().count("1 cards") == 3
+        app.press("id:right-1")
+        app.wait_for("0 cards")
+        app.wait_for("2 cards")
+        app.press("id:add")
+        app.wait_for("Card 4")
+        app.press("id:left-3")
+        app.wait_for("0 cards")
+
+
 def test_stopwatch_example():
     App = load_example("stopwatch")["App"]
     with open(App) as app:
