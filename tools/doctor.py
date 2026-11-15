@@ -541,7 +541,7 @@ GSTREAMER_PACKAGES = ("gstreamer-1.0", "gstreamer-app-1.0", "gstreamer-audio-1.0
 
 
 def check_gstreamer() -> Result:
-    """NSH 0.5.0's Linux backend links GStreamer (core, app, audio)."""
+    """NSH 0.5's Linux backend links GStreamer (core, app, audio)."""
     if not shutil.which("pkg-config"):
         return Result("GStreamer", FAIL, "pkg-config not found", linux_install_hint())
     proc = _run(["pkg-config", "--modversion", *GSTREAMER_PACKAGES])
