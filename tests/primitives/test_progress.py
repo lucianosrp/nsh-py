@@ -32,6 +32,15 @@ def test_progress_props():
     assert bound() == f"{INDICATOR_CLASS} {INDETERMINATE_CLASS}"
 
 
+def test_color_replaces_the_primary_colour():
+    p = nsh.progress(30, color="orange-500")
+    assert "bg-orange-500/20" in p.props["track_class"]
+    assert "bg-primary" not in p.props["track_class"]
+    assert p.props["indicator_class"].split()[-1] == "bg-orange-500"
+    busy = nsh.progress(indeterminate=True, color="orange-500").props["indicator_class"]
+    assert "bg-orange-500" in busy and INDETERMINATE_CLASS in busy
+
+
 @pytest.mark.parametrize("bad", [0, -1, float("nan")])
 def test_max_must_be_positive(bad):
     with pytest.raises(ValueError, match="positive"):

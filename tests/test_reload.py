@@ -1,6 +1,7 @@
 """Hot reload: the window shows the script's new root after a change."""
 
 import builtins
+import io
 import json
 import logging
 import os
@@ -12,7 +13,7 @@ from pathlib import Path
 import pytest
 
 import nsh
-from nsh._reload import Reloader, is_app_module
+from nsh._reload import Reloader, is_app_module, show_messages
 from nsh.testing import open
 
 APP = """
@@ -278,3 +279,37 @@ def test_a_class_components_fields_keep_their_values(tmp_path):
         script.write_text(textwrap.dedent(CLASS_APP.replace("LABEL", "v2")))
         nsh.call_soon(reloader.reload)
         app.wait_for("v2 1")
+
+
+@pytest.fixture
+def bare_logging(monkeypatch):
+    """No logging set up, as in a plain script; restored afterwards.
+
+    Call it in the test body: pytest's own logging plugin adds its handlers
+    to the root logger when the test starts, after fixtures have run."""
+    nsh_logger = logging.getLogger("nsh")
+
+    def bare():
+        monkeypatch.setattr(logging.getLogger(), "handlers", [])
+        monkeypatch.setattr(nsh_logger, "handlers", [])
+        monkeypatch.setattr(nsh_logger, "level", logging.NOTSET)
+        return nsh_logger
+
+    return bare
+
+
+def test_reload_messages_show_without_logging_set_up(bare_logging):
+    nsh_logger = bare_logging()
+    show_messages()
+    (handler,) = nsh_logger.handlers
+    assert handler.stream is sys.stderr
+    handler.setStream(out := io.StringIO())
+    nsh_logger.info("Reloaded app.py")
+    assert out.getvalue() == "INFO nsh: Reloaded app.py\n"
+
+
+def test_the_apps_own_logging_setup_wins(bare_logging):
+    nsh_logger = bare_logging()
+    logging.getLogger().addHandler(logging.NullHandler())
+    show_messages()
+    assert nsh_logger.handlers == []

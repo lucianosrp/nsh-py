@@ -13,6 +13,9 @@
 //!   the items in one GIL pass, compared with `==` like a dict key's.
 //! - `render` runs untracked inside a region that reads the row's item
 //!   only, so it runs once per row and again only if its item changes.
+//! - If Python's `Each.pass_index` is set, `render` is called as
+//!   `render(item, index)` where `index` is a callable that reads the
+//!   row's NSH index signal (it updates when the row moves).
 
 use std::{
     cell::{Cell, RefCell},
@@ -21,7 +24,11 @@ use std::{
 };
 
 use nsh_core::{element::Reactive, prelude::*};
-use pyo3::{exceptions::PyTypeError, prelude::*, sync::PyOnceLock};
+use pyo3::{
+    exceptions::{PyRuntimeError, PyTypeError},
+    prelude::*,
+    sync::PyOnceLock,
+};
 
 use crate::{bridge, tree};
 
@@ -170,6 +177,7 @@ pub(crate) fn build(py: Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<AnyEleme
     let items = obj.getattr("items")?;
     let render = obj.getattr("render")?.unbind();
     let key = obj.getattr("key")?;
+    let pass_index: bool = obj.getattr("pass_index")?.extract()?;
     let keyer = Rc::new(Keyer {
         key: (!key.is_none()).then(|| key.unbind()),
         failed: Cell::new(0),
@@ -195,19 +203,54 @@ pub(crate) fn build(py: Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<AnyEleme
     Ok(each(
         items,
         |entry: &Entry| entry.key.clone(),
-        move |item: ReadSignal<Entry>, _index| {
+        move |item: ReadSignal<Entry>, index| {
             let render = render.clone();
             dynamic(move || {
                 // Only the item is tracked: what `render` reads it reads
-                // once, as a component does.
+                // once, as a component does. The index is a callable the
+                // row holds: bindings that call it update when the row
+                // moves, without rendering again.
                 let entry = item.get();
                 untracked(|| {
                     bridge::call(|py| {
-                        tree::children(py, &render.bind(py).call1((&*entry.item.0,))?)
+                        let row = if pass_index {
+                            let idx = Bound::new(py, RowIndex { index })?;
+                            render.bind(py).call1((&*entry.item.0, idx))?
+                        } else {
+                            render.bind(py).call1((&*entry.item.0,))?
+                        };
+                        tree::children(py, &row)
                     })
                     .unwrap_or_default()
                 })
             })
         },
     ))
+}
+
+/// The row's position, as `render(item, index)` receives it. `index()`
+/// reads NSH's index signal, so a binding that calls it follows a move.
+/// Not `unsendable`: Python may free it on any thread once the app
+/// stops, and the handle is a plain id. Reading is engine-only.
+#[pyclass(frozen, module = "nsh._core")]
+struct RowIndex {
+    index: ReadSignal<usize>,
+}
+
+#[pymethods]
+impl RowIndex {
+    fn __call__(&self) -> PyResult<usize> {
+        if !bridge::in_engine() {
+            return Err(PyRuntimeError::new_err(
+                "each index can only be read in the app",
+            ));
+        }
+        self.index
+            .try_get()
+            .ok_or_else(|| PyRuntimeError::new_err("each index is gone"))
+    }
+
+    fn __repr__(&self) -> String {
+        "<each index>".into()
+    }
 }

@@ -31,17 +31,19 @@ STRIPE_CLASS = "bg-muted/50"
 SEPARATOR_CLASS = "border-t border-border"
 """Added to body rows after the first when not `striped`."""
 
-CELL_CLASS = "px-3 py-2 text-sm text-foreground"
+CELL_CLASS = "px-3 py-2 text-sm text-foreground truncate"
 NUMBER_CLASS = "text-right"
 """Added to the cells (and header) of a column holding only numbers."""
 INDEX_CLASS = "text-muted-foreground"
 """Added to the cells of the index columns."""
-HEADER_CELL_CLASS = "px-3 py-2 text-sm font-medium text-muted-foreground"
+HEADER_CELL_CLASS = "px-3 py-2 text-sm font-medium text-muted-foreground truncate"
 FOOTER_CLASS = "px-3 py-2 text-sm text-muted-foreground border-t border-border"
 EMPTY_CLASS = "px-3 py-2 text-sm text-muted-foreground"
 
-DEFAULT_WIDTH = "flex-1"
-"""A cell's width class unless `widths` names its column: equal shares."""
+DEFAULT_WIDTH = "flex-1 min-w-16"
+"""A cell's width class unless `widths` names its column: equal shares,
+never narrower than a short word. Cells keep to one line and end in "…"
+when the text doesn't fit (`truncate`)."""
 INDEX_WIDTH = "w-16"
 """The default width of an index column (row numbers are short)."""
 

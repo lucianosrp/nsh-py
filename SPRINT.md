@@ -48,9 +48,9 @@ Pick the path for your track. Both end with tests passing and a window opening.
 CI keeps a prebuilt core of `main` (the compiled extension) on the `dev-core`
 release. You download it once and run everything straight from the checkout.
 
-1. Install [uv](https://docs.astral.sh/uv/) and Git. On Linux you also need the GTK 4
+1. Install [uv](https://docs.astral.sh/uv/) and Git. On Linux you also need the GTK 4 and GStreamer
    *runtime* (GTK 4.14+, Ubuntu 24.04+, Debian 13, Fedora 40+, Arch; on Ubuntu
-   `sudo apt install libgtk-4-1`). macOS needs 14+ and Windows 10 1809+.
+   `sudo apt install libgtk-4-1 libgstreamer1.0-0 libgstreamer-plugins-base1.0-0`). macOS needs 14+ and Windows 10 1809+.
 2. Clone the repo, then fetch the core and check it works:
    ```sh
    uv run --no-project python tools/fetch_core.py                   # downloads python/nsh/_core.*
@@ -71,7 +71,7 @@ Python-only work stays in `python/nsh/components/`, `examples/` and `tests/`. Ed
 1. Install [uv](https://docs.astral.sh/uv/) and Git.
 2. Install the platform requirements:
    - **Linux:** GTK 4.14+ and glibc 2.39+ (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch),
-     plus `clang` and the GTK dev package: `sudo apt install clang libclang-dev libgtk-4-dev`.
+     plus `clang` and the GTK and GStreamer dev packages: `sudo apt install clang libclang-dev libgtk-4-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev`.
      Ubuntu 22.04 and Debian 12 are too old.
    - **macOS:** macOS 14+ and the Xcode Command Line Tools (`xcode-select --install`).
    - **Windows:** Windows 10 1809+, Visual Studio Build Tools (C++ workload), and LLVM
@@ -137,7 +137,7 @@ def test_card_shows_title():
 
 - Be kind. Ask early: mentors would rather unblock you in five minutes than
   find out after an hour.
-- Don't bump the NSH version pins (`=0.4.0`) in a sprint PR. Bumps are
+- Don't bump the NSH version pins (`=0.5.0`) in a sprint PR. Bumps are
   deliberate, one PR each.
 - Never add the crates.io crate called `nsh`: it's an unrelated shell. NSH's
   crates are `nsh-core`, `nsh-base` and so on.

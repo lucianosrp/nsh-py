@@ -82,6 +82,30 @@ def test_tasks_example():
         app.wait_for("2 left")
 
 
+def test_stopwatch_example():
+    App = load_example("stopwatch")["App"]
+    with open(App) as app:
+        assert app.shows("Tea") and app.shows("Eggs")
+        app.press("Start >> nth=0")  # only the first one runs
+        app.wait_for("00:01")
+        assert app.texts().count("00:00") == 1
+        app.press("Pause")
+        app.press("Reset >> nth=0")
+        app.wait_for("text:/^00:00$/ >> nth=1")
+
+
+def test_dashboard_example():
+    App = load_example("dashboard")["App"]
+    with open(App, size=(1400, 1000)) as app:
+        assert app.shows("Recent orders") and app.shows("Today's goals")
+        app.wait_for("12 orders match")
+        app.press("Live orders")  # stop the stream, so counts hold still
+        app.press("New order")
+        app.wait_for("13 orders match")
+        app.press("Customers")
+        app.wait_for("text:/^Customers$/ >> nth=1")  # the header follows the sidebar
+
+
 def test_counter_decorators_example():
     Counter = load_example("counter_decorators")["Counter"]
     with open(Counter) as app:
@@ -263,10 +287,13 @@ def test_form_example():
     with open(Form) as app:
         app.type_text("id:name", "Ada")
         app.wait_for("Hello, Ada")
-        app.type_text("id:email", "ada@example.org\n")
+        app.type_text("id:email", "ada@example.org")
+        app.type_text("id:password", "s3cret")
+        app.type_text("id:email", "\n")
         app.wait_for("Welcome, Ada! We'll write to ada@example.org.")
         assert app.value("id:name") == ""
         assert app.value("id:email") == ""
+        assert app.value("id:password") == ""
         app.type_text("id:name", "Bo")
         app.press("id:send")  # no email: nothing is sent
         app.wait_for("Hello, Bo")

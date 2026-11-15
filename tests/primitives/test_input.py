@@ -20,6 +20,11 @@ def test_input_props():
     assert two_way.props["test_id"] == "name"
     # Props left at None are dropped.
     assert set(nsh.input().props) == set()
+    extra = nsh.input("x", readonly=True, masked=True, max_length=8, multiline=True)
+    assert extra.props["readonly"] is True
+    assert extra.props["masked"] is True
+    assert extra.props["max_length"] == 8
+    assert extra.props["multiline"] is True
 
     def log(text):
         pass
@@ -218,6 +223,69 @@ def test_handler_exceptions_are_logged_and_the_app_survives(handler, caplog):
     assert errors
     assert all(isinstance(r.exc_info[1], ValueError) for r in errors)
     assert f"{handler} failed" in caplog.text
+
+
+def test_readonly_input_is_not_editable():
+    def App():
+        locked = nsh.signal(True)
+        return nsh.view(
+            nsh.input("Ada", readonly=locked, test_id="name"),
+            nsh.button("unlock", on_press=locked.setter(False)),
+        )
+
+    with open(App) as app:
+        assert app.value("id:name") == "Ada"
+        with pytest.raises(RuntimeError, match="not editable"):
+            app.type_text("id:name", "y")
+        assert app.value("id:name") == "Ada"
+        app.press("unlock")
+        app.type_text("id:name", "!")
+        assert app.value("id:name") == "Ada!"
+
+
+def test_masked_input_holds_the_real_text():
+    def App():
+        secret = nsh.signal("")
+        return nsh.view(
+            nsh.input(secret, masked=True, test_id="pw"),
+            nsh.text(lambda: f"len={len(secret())}"),
+        )
+
+    with open(App) as app:
+        app.type_text("id:pw", "s3cret")
+        app.wait_for("len=6")
+        assert app.value("id:pw") == "s3cret"
+
+
+def test_max_length_clips_what_is_typed():
+    def App():
+        name = nsh.signal("")
+        return nsh.view(
+            nsh.input(name, max_length=5, test_id="name"),
+            nsh.text(lambda: f"name={name()}"),
+        )
+
+    with open(App) as app:
+        app.type_text("id:name", "Ada Lovelace")
+        app.wait_for("name=Ada L")
+        assert app.value("id:name") == "Ada L"
+
+
+def test_multiline_return_inserts_a_line():
+    submitted = []
+
+    def App():
+        note = nsh.signal("")
+        return nsh.view(
+            nsh.input(note, multiline=True, on_submit=submitted.append, test_id="note"),
+            nsh.text(lambda: note().replace("\n", "/")),
+        )
+
+    with open(App) as app:
+        app.type_text("id:note", "a\nb")
+        app.wait_for("a/b")
+        assert app.value("id:note") == "a\nb"
+        assert submitted == []
 
 
 def test_input_can_be_styled_with_a_bound_class():

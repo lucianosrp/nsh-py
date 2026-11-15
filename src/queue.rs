@@ -69,6 +69,8 @@ pub(crate) fn begin() {
 
 /// The app ended (its engine thread is gone): back to Idle. Jobs still
 /// waiting are dropped.
+// The web app never ends: the page owns it.
+#[cfg_attr(target_os = "emscripten", allow(dead_code))]
 pub(crate) fn end() {
     let jobs = {
         let mut q = queue();

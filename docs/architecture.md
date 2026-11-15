@@ -69,7 +69,9 @@ engine thread "nsh-engine" ──► AppRoot::view → Python App() → Element 
 - **Ctrl-C:** Python's SIGINT handler only sets a flag. `check_signals`
   runs it on the main thread, which is busy in the GTK loop, so a GLib
   timer checks every 100 ms. On `KeyboardInterrupt` it quits the
-  `gio::Application`, and `nsh.run()` re-raises it. macOS and Windows
+  `gio::Application`, and `_core.run` re-raises it; `nsh.run()` catches
+  it and returns, so Ctrl-C closes the app like the window's close button
+  does, with no traceback. macOS and Windows
   don't have this yet (they need an AppKit/Win32 timer).
 - **Other threads:** any Python thread can reach the app through the
   engine-thread queue (next section). `nsh.call_soon(fn, *args)` runs `fn`
@@ -262,10 +264,17 @@ nodes, bindings and the signals `render` made) and disposes the rest.
   once per key, and again (in place) only if the item under the key was
   replaced by one that isn't `==`. Signals read in `render` are read once,
   as in a component.
+- **Index.** `render(item)` is enough. With `index=True` it is
+  `render(item, index)`: the second argument is a callable wrapping
+  NSH's index signal: `index()` is the row's position, and a binding that
+  reads it updates when the row moves, without rendering again. Pass it
+  as a binding (`nsh.text(index)`) or call it in one
+  (`nsh.text(lambda: f"{index()}. {item}")`). It's a flag rather than a
+  look at `render`'s signature, which can't tell for `*args`, builtins
+  or decorated functions.
 - **Errors.** `items`, `key` and `render` run through `bridge::call`. A
   failed `items` keeps the rows shown (the last good list), so their state
   survives an error that may pass.
-- The row's index isn't passed to Python yet.
 
 ## Binding nsh-base components
 
@@ -281,7 +290,7 @@ and what is different.
   feed it straight from Python), a slot setter that takes an element
   (`.indicator(..)`), `.child(..)` for the children, and one listener per
   event (`.on_change(|value: &bool| ..)`). Read the component's file in
-  `nsh-base-0.4.0/src/` for its props and events; nsh-engine's
+  `nsh-base-0.5.0/src/` for its props and events; nsh-engine's
   `tests/engine/rust_styles.rs` styles a switch and a checkbox from Rust.
 - **The component has no look.** nsh-base owns the behaviour (presses,
   keys, the disabled state, the role and value for screen readers) and
