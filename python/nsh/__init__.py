@@ -8,7 +8,19 @@ from nsh._engine import Effect, Timer, call_soon, effect, set_interval, set_time
 from nsh._runtime import run
 from nsh._signals import Computed, Signal, computed, signal
 from nsh.components import badge, button, card, separator, skeleton, table
-from nsh.primitives import checkbox, image, input, progress, scroll, select, switch, text, view
+from nsh.primitives import (
+    checkbox,
+    image,
+    input,
+    progress,
+    scroll,
+    select,
+    switch,
+    tab,
+    tabs,
+    text,
+    view,
+)
 
 __all__ = [
     "Component",
@@ -39,7 +51,9 @@ __all__ = [
     "signal",
     "skeleton",
     "switch",
+    "tab",
     "table",
+    "tabs",
     "text",
     "view",
 ]

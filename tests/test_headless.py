@@ -106,6 +106,17 @@ def test_dashboard_example():
         app.wait_for("text:/^Customers$/ >> nth=1")  # the header follows the sidebar
 
 
+def test_tabs_example():
+    App = load_example("tabs")["App"]
+    with open(App) as app:
+        assert app.shows("Visitors, sign-ups and conversion this week.")
+        app.press("Orders")
+        app.wait_for("Shipments on the way and recent deliveries.")
+        app.wait_for("Selected: Orders")
+        app.press("Billing")
+        app.wait_for("Invoices, plans and payment methods.")
+
+
 def test_counter_decorators_example():
     Counter = load_example("counter_decorators")["Counter"]
     with open(Counter) as app:

@@ -268,7 +268,7 @@ def edit_primitives_init(text: str, name: str) -> str:
     at = after.start() if after else pairs[-1].end()
     text = text[:at] + block + text[at:]
 
-    m = re.search(r"^KINDS = frozenset\(\{(.*?)\}\)", text, re.S | re.M)
+    m = re.search(r"^KINDS = frozenset\(\s*\{(.*?)\}\s*\)", text, re.S | re.M)
     if not m:
         raise ScaffoldError("can't find `KINDS = frozenset({...})` in primitives/__init__.py")
     consts = sorted({*re.findall(r"_\w+", m.group(1)), const})
