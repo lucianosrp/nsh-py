@@ -4,10 +4,8 @@
 //! bytes, or a callable returning one), `alt` (screen-reader label),
 //! `fit` (`contain`, `cover`, `fill`, `none`, `scale-down`), plus the
 //! common props (`class_`, `test_id`). Relative paths are made absolute
-//! from the process current working directory: NSH only loads absolute
-//! paths.
+//! ([`props::uri`]).
 
-use std::path::Path;
 use std::rc::Rc;
 
 use nsh_core::{
@@ -36,7 +34,7 @@ pub(super) fn build(
         el = el.label(props::string(&alt)?);
     }
     if let Some(fit) = props::get(props, "fit")? {
-        el = el.object_fit(fit_reactive(&fit)?);
+        el = el.object_fit(props::fit(&fit, ResizeMode::Cover)?);
     }
     Ok(props::common(el, props)?.into_element())
 }
@@ -56,39 +54,14 @@ fn to_src(obj: &Bound<'_, PyAny>) -> PyResult<ImageSrc> {
     Ok(ImageSrc::from(src_uri(obj)?))
 }
 
-/// A URI NSH can load: `http(s)://`, `data:`, `file:`, `asset:`, or an
-/// absolute file path. Bytes become a `data:` URI. Relative paths are
-/// joined to the process cwd.
+/// What `obj` names, as a URI NSH can load ([`props::uri`]); bytes
+/// become a `data:` URI.
 fn src_uri(obj: &Bound<'_, PyAny>) -> PyResult<String> {
     if obj.is_instance_of::<PyBytes>() || obj.is_instance_of::<PyByteArray>() {
         let bytes: Vec<u8> = obj.extract()?;
         return Ok(data_uri(&bytes));
     }
-    let s = if obj.hasattr("__fspath__")? {
-        obj.call_method0("__fspath__")?.extract::<String>()?
-    } else {
-        obj.extract::<String>()
-            .or_else(|_| obj.str().map(|s| s.to_string()))?
-    };
-    Ok(resolve_uri(&s))
-}
-
-fn resolve_uri(s: &str) -> String {
-    if is_uri(s) {
-        return s.to_owned();
-    }
-    match std::path::absolute(Path::new(s)) {
-        Ok(p) => p.to_string_lossy().into_owned(),
-        Err(_) => s.to_owned(),
-    }
-}
-
-fn is_uri(s: &str) -> bool {
-    s.starts_with("http://")
-        || s.starts_with("https://")
-        || s.starts_with("data:")
-        || s.starts_with("file:")
-        || s.starts_with("asset:")
+    props::uri(obj)
 }
 
 fn data_uri(bytes: &[u8]) -> String {
@@ -127,39 +100,4 @@ fn base64(data: &[u8]) -> String {
         i += 3;
     }
     out
-}
-
-fn fit_reactive(obj: &Bound<'_, PyAny>) -> PyResult<Reactive<ResizeMode>> {
-    if obj.is_callable() {
-        let f = obj.clone().unbind();
-        Ok(Reactive::Bound(Rc::new(move || {
-            bridge::call(|py| {
-                let name = f.bind(py).call0()?.str()?.to_string();
-                parse_fit(&name).ok_or_else(|| {
-                    PyValueError::new_err(format!(
-                        "unknown fit {name:?}; use contain, cover, fill, none or scale-down"
-                    ))
-                })
-            })
-            .unwrap_or(ResizeMode::Cover)
-        })))
-    } else {
-        let name = obj.str()?.to_string();
-        parse_fit(&name).map(Reactive::Static).ok_or_else(|| {
-            PyValueError::new_err(format!(
-                "unknown fit {name:?}; use contain, cover, fill, none or scale-down"
-            ))
-        })
-    }
-}
-
-fn parse_fit(name: &str) -> Option<ResizeMode> {
-    Some(match name {
-        "contain" => ResizeMode::Contain,
-        "cover" => ResizeMode::Cover,
-        "fill" | "stretch" => ResizeMode::Stretch,
-        "none" | "center" => ResizeMode::Center,
-        "scale-down" => ResizeMode::ScaleDown,
-        _ => return None,
-    })
 }

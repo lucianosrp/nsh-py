@@ -179,3 +179,52 @@ fn extract_u32(obj: &Bound<'_, PyAny>) -> PyResult<u32> {
         ))
     })
 }
+
+/// What `obj` (a `str` or an `os.PathLike`) names, as a URI NSH can load.
+/// NSH only loads absolute paths, so a relative one is joined to the
+/// process cwd.
+pub(crate) fn uri(obj: &Bound<'_, PyAny>) -> PyResult<String> {
+    let s = if obj.hasattr("__fspath__")? {
+        obj.call_method0("__fspath__")?.extract::<String>()?
+    } else {
+        obj.extract::<String>()
+            .or_else(|_| obj.str().map(|s| s.to_string()))?
+    };
+    let is_uri = ["http://", "https://", "data:", "file:", "asset:"]
+        .iter()
+        .any(|scheme| s.starts_with(scheme));
+    if is_uri {
+        return Ok(s);
+    }
+    Ok(match std::path::absolute(&s) {
+        Ok(p) => p.to_string_lossy().into_owned(),
+        Err(_) => s,
+    })
+}
+
+/// How an image or a video fits its box (`fit`), fixed or bound. A bound
+/// name that is unknown (logged) is `default`, the kind's own fit.
+pub(crate) fn fit(obj: &Bound<'_, PyAny>, default: ResizeMode) -> PyResult<Reactive<ResizeMode>> {
+    fn parse(name: &str) -> PyResult<ResizeMode> {
+        Ok(match name {
+            "contain" => ResizeMode::Contain,
+            "cover" => ResizeMode::Cover,
+            "fill" | "stretch" => ResizeMode::Stretch,
+            "none" | "center" => ResizeMode::Center,
+            "scale-down" => ResizeMode::ScaleDown,
+            _ => {
+                return Err(PyValueError::new_err(format!(
+                    "unknown fit {name:?}; use contain, cover, fill, none or scale-down"
+                )));
+            }
+        })
+    }
+    if obj.is_callable() {
+        let f = obj.clone().unbind();
+        Ok(Reactive::Bound(Rc::new(move || {
+            bridge::call(|py| parse(&f.bind(py).call0()?.str()?.to_string())).unwrap_or(default)
+        })))
+    } else {
+        parse(&obj.str()?.to_string()).map(Reactive::Static)
+    }
+}
