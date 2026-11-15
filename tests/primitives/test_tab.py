@@ -24,9 +24,7 @@ def test_pressing_a_tab_runs_on_press():
                 "tabs",
                 {"class_": "flex-row"},
                 [
-                    nsh.tab(
-                        "One", selected=True, on_press=lambda: seen.append("One"), test_id="one"
-                    ),
+                    nsh.tab("One", selected=True, on_press=lambda: seen.append("One")),
                     nsh.tab("Two", on_press=lambda: seen.append("Two"), test_id="two"),
                 ],
             )

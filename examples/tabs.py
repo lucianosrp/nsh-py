@@ -42,12 +42,11 @@ def App():
             label,
             selected=lambda: page() == label,
             on_press=page.setter(label),
-            test_id=f"sections-{label}",
         )
 
     return nsh.view(
         nsh.text("Account", class_="text-xl font-semibold text-foreground"),
-        nsh.tabs(*[section(label) for label in PANELS], test_id="sections"),
+        nsh.tabs(*[section(label) for label in PANELS]),
         lambda: PANELS[page()](),
         nsh.text(
             lambda: f"Selected: {page()}",

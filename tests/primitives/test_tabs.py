@@ -46,7 +46,7 @@ def test_pressing_a_tab_shows_its_panel():
             )
 
         return nsh.view(
-            nsh.tabs(*[section(label) for label in panels], test_id="sections"),
+            nsh.tabs(*[section(label) for label in panels]),
             lambda: nsh.text(panels[page()]),
             class_="gap-4",
         )

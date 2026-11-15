@@ -68,7 +68,6 @@ def Sidebar(page):
             selected=lambda: page() == name,
             on_press=page.setter(name),
             class_=tab_class,
-            test_id=f"nav-{name}",
         )
 
     return nsh.view(
@@ -84,7 +83,6 @@ def Sidebar(page):
             *[nav_tab(name) for name in NAV],
             class_="flex-col gap-1 border-b-0",
             indicator_class=None,
-            test_id="nav",
         ),
         nsh.view(class_="flex-1"),
         nsh.text("nsh-py demo store", class_="text-xs text-muted-foreground px-3"),
