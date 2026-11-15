@@ -25,6 +25,8 @@ from nsh.primitives.tabs import KIND as _TABS
 from nsh.primitives.tabs import tabs
 from nsh.primitives.text import KIND as _TEXT
 from nsh.primitives.text import text
+from nsh.primitives.video import KIND as _VIDEO
+from nsh.primitives.video import video
 from nsh.primitives.view import KIND as _VIEW
 from nsh.primitives.view import view
 
@@ -43,6 +45,7 @@ KINDS = frozenset(
         _TAB,
         _TABS,
         _TEXT,
+        _VIDEO,
         _VIEW,
     }
 )
@@ -60,5 +63,6 @@ __all__ = [
     "tab",
     "tabs",
     "text",
+    "video",
     "view",
 ]

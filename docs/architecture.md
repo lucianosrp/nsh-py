@@ -323,3 +323,12 @@ and what is different.
   `on_change`), and a bool is the first value of a signal the toggle
   makes for itself, so `nsh.checkbox("Remember me", checked=True)` still
   toggles.
+
+## Commands to an element: `Video.seek`
+
+Some things an element does are commands, not props: a video jumps to a time once, so there is no value to bind. NSH sends them through an `ElementRef` put on the element (TS: `ref`).
+
+- **The element is the handle.** `nsh.video` returns a `Video`, an `Element` with a `seek` method, so `player = nsh.video(...)` then `player.seek(0)` in a handler reads like any Python object. A separate `ref=` object would be one more thing to make and pass around, for a command only a video has.
+- **The ref is made when the video is built.** `nsh.video` puts an empty `_core.VideoRef` in the props. The builder (`src/elements/video.rs`) makes the NSH ref on the engine, under the owner building the video, and stores it with the engine thread's id, as a signal's `Trigger` does. A video built again (its region re-ran) answers to the new ref; the old one dies with its owner and does nothing.
+- **Any thread.** The ref is plain ids, so it isn't `unsendable`. A seek from a worker thread is posted to the engine, in order with what else that thread posted. Before the video is shown, or with no app, a seek does nothing.
+- **Tests.** Nothing plays a video headless, so `nsh.testing`'s `dispatch` plays the platform's part (it delivers `onLoad` and the rest to a test id) and `seeks` reads back the seeks sent.

@@ -18,7 +18,10 @@ mod switch;
 mod tab;
 mod tabs;
 mod text;
+mod video;
 mod view;
+
+pub(crate) use video::VideoRef;
 
 /// Builds one element of a kind from its props and children.
 pub(crate) type Build =
@@ -36,6 +39,7 @@ const KINDS: &[(&str, Build)] = &[
     ("tab", tab::build),
     ("tabs", tabs::build),
     ("text", text::build),
+    ("video", video::build),
     ("view", view::build),
 ];
 

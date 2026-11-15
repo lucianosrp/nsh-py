@@ -28,6 +28,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(window::quit, m)?)?;
     m.add_function(wrap_pyfunction!(window::current_window, m)?)?;
     m.add_class::<window::Window>()?;
+    m.add_class::<elements::VideoRef>()?;
     #[cfg(not(target_arch = "wasm32"))]
     m.add_class::<headless::Headless>()?;
     queue::register(m)?;

@@ -5,14 +5,16 @@
 use std::{sync::Mutex, time::Duration};
 
 use nsh_core::{
+    Command, EventKind, EventPayload, NodeId, PayloadValue,
     geometry::{Points, Size},
     platform::{Idiom, Os},
 };
 use nsh_engine::EngineConfig;
 use nsh_testing::Headless as Driver;
 use pyo3::{
-    exceptions::{PyRuntimeError, PyTimeoutError},
+    exceptions::{PyRuntimeError, PyTimeoutError, PyValueError},
     prelude::*,
+    types::{PyBool, PyDict, PyString},
 };
 
 /// A running headless app. Its methods release the GIL: the engine thread
@@ -151,6 +153,61 @@ impl Headless {
         })
     }
 
+    /// Delivers `event` (its protocol name, `"onLoad"`) with the fields
+    /// `data` to the view whose test id is `test_id`, as a platform would,
+    /// and waits until the app settles.
+    #[pyo3(signature = (test_id, event, data=None))]
+    fn dispatch(
+        &self,
+        py: Python<'_>,
+        test_id: String,
+        event: String,
+        data: Option<Bound<'_, PyDict>>,
+    ) -> PyResult<()> {
+        let kind = EventKind::from_prop(&event)
+            .ok_or_else(|| PyValueError::new_err(format!("unknown event {event:?}")))?;
+        let mut fields = Vec::new();
+        for (key, value) in data.iter().flat_map(|d| d.iter()) {
+            let value = if value.is_instance_of::<PyBool>() {
+                PayloadValue::Bool(value.extract()?)
+            } else if value.is_instance_of::<PyString>() {
+                PayloadValue::Str(value.extract()?)
+            } else {
+                PayloadValue::Number(value.extract()?)
+            };
+            // A payload's keys are `&'static str`: leaking a test's few
+            // field names is the price.
+            let key: &'static str = Box::leak(key.extract::<String>()?.into_boxed_str());
+            fields.push((key, value));
+        }
+        self.with(py, |d| {
+            d.catch_up();
+            let node = node_with_test_id(d, &test_id)?;
+            d.engine()
+                .control()
+                .dispatch_event(node, kind, EventPayload::Map(fields));
+            d.settle();
+            Ok(())
+        })
+    }
+
+    /// The seconds of the seeks sent to the video whose test id is
+    /// `test_id`, in order.
+    fn seeks(&self, py: Python<'_>, test_id: String) -> PyResult<Vec<f64>> {
+        self.with(py, |d| {
+            d.catch_up();
+            let node = node_with_test_id(d, &test_id)?;
+            Ok(d.screen()
+                .commands()
+                .iter()
+                .filter_map(|(id, command)| match command {
+                    Command::Seek(seconds) if *id == node => Some(*seconds),
+                    _ => None,
+                })
+                .collect())
+        })
+    }
+
     /// What the platform reports of window `window_id` (`"main"`): whether
     /// it is visible, minimized and focused; `None` while it is not open.
     #[pyo3(signature = (window_id="main".to_owned()))]
@@ -177,6 +234,18 @@ impl Headless {
             }
         });
     }
+}
+
+/// The view whose test id is `test_id`, written bare or as the selector
+/// `id:<test id>` (nsh-testing's selector resolver is private).
+fn node_with_test_id(d: &Driver, test_id: &str) -> PyResult<NodeId> {
+    let test_id = test_id.strip_prefix("id:").unwrap_or(test_id);
+    d.screen()
+        .layout_nodes()
+        .into_iter()
+        .find(|n| n.test_id.as_deref() == Some(test_id))
+        .map(|n| n.id)
+        .ok_or_else(|| PyRuntimeError::new_err(format!("no view has test id {test_id:?}")))
 }
 
 impl Drop for Headless {

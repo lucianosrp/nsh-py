@@ -76,6 +76,21 @@ class App:
         along its axis (negative: back), then wait for the app to settle."""
         self._app.scroll(selector, distance)
 
+    def dispatch(self, test_id: str, event: str, **data: float | bool | str) -> None:
+        """Deliver `event` to the view `test_id` (bare or `"id:..."`), as the
+        platform would, then wait for the app to settle. For what nothing
+        headless does on its own, such as a video loading. `event` and the
+        `data` fields are NSH's protocol names:
+
+            app.dispatch("player", "onLoad", duration=5.0, width=640, height=360)
+            app.dispatch("player", "onProgress", currentTime=1.5, duration=5.0)
+        """
+        self._app.dispatch(test_id, event, data)
+
+    def seeks(self, test_id: str) -> list[float]:
+        """The seconds of the seeks sent to the video `test_id`, in order."""
+        return self._app.seeks(test_id)
+
     def window(self, window_id: str = "main") -> WindowState | None:
         """What the platform reports of window `window_id` (`"main"`): visible,
         minimized, focused. `None` while it isn't open. Needs an app
