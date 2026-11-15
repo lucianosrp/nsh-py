@@ -67,10 +67,15 @@ def App():
     return nsh.text("hi")
 nsh.run(App)
 """
+    # Import the same nsh as this process: conftest may have put the
+    # checkout's python/ on sys.path (a fetched core, not installed).
+    pkg_dir = os.path.dirname(os.path.dirname(nsh.__file__))
+    pythonpath = os.pathsep.join(filter(None, [pkg_dir, os.environ.get("PYTHONPATH")]))
     proc = subprocess.Popen(
         [sys.executable, "-c", script],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        env={**os.environ, "PYTHONPATH": pythonpath},
     )
     try:
         assert select.select([proc.stdout], [], [], 15)[0], proc.stderr.read()
