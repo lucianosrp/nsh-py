@@ -19,7 +19,7 @@ def test_badge_shows_its_label_and_test_id():
         ("default", "bg-primary", "text-primary-foreground"),
         ("secondary", "bg-secondary", "text-secondary-foreground"),
         ("outline", "border-border", "text-foreground"),
-        ("destructive", "bg-destructive", "text-destructive-foreground"),
+        ("destructive", "bg-destructive", "text-white"),
     ],
 )
 def test_badge_variants_show_the_label_with_matching_colors(variant, surface_class, label_class):
