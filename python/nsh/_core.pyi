@@ -32,6 +32,14 @@ def call_soon(func: Callable[..., Any], args: tuple[Any, ...] = ()) -> None:
 def app_active() -> bool:
     """Whether an app is starting or running: posted jobs will run (src/queue.rs)."""
 
+def alert_dialog(
+    title: str,
+    description: str | None,
+    actions: list[tuple[str, str, str]],
+    on_result: Callable[[str | None], Any] | None = None,
+) -> None:
+    """Show the native alert dialog and report its chosen action (src/alert_dialog.rs)."""
+
 def quit() -> None:  # noqa: A001
     """Quit the app; posted from other threads, nothing with no app (src/window.rs)."""
 

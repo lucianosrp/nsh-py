@@ -1,5 +1,6 @@
 use pyo3::prelude::*;
 
+mod alert_dialog;
 mod app;
 mod bridge;
 mod each;
@@ -18,6 +19,7 @@ mod window;
 #[pymodule]
 fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+    m.add_function(wrap_pyfunction!(alert_dialog::alert_dialog, m)?)?;
     m.add_function(wrap_pyfunction!(app::run, m)?)?;
     #[cfg(not(target_os = "emscripten"))]
     m.add_function(wrap_pyfunction!(tui::run_tui, m)?)?;

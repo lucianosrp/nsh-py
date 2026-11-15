@@ -2,6 +2,7 @@
 
 from nsh._component import Component
 from nsh._core import __version__
+from nsh._dialog import alert_dialog
 from nsh._each import Each, each
 from nsh._element import Element
 from nsh._engine import Effect, Timer, call_soon, effect, set_interval, set_timeout
@@ -34,6 +35,7 @@ __all__ = [
     "Window",
     "__version__",
     "alert",
+    "alert_dialog",
     "badge",
     "button",
     "call_soon",
