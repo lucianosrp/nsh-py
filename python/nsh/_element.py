@@ -16,7 +16,7 @@ Maintainers own this module; contributions go in `nsh.primitives`
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 if TYPE_CHECKING:
     from nsh._each import Each
@@ -24,17 +24,22 @@ if TYPE_CHECKING:
 Child = Union["Element", str, None, Callable[[], Any], list, tuple, "Each[Any]"]
 """A child: an element, a string (a text), None, a list, a callable, or `nsh.each`."""
 
-StrProp = str | Callable[[], Any]
+T = TypeVar("T")
+
+Prop = T | Callable[[], T]
+"""A value, or a callable returning one (a binding): `Prop[str]`, `Prop[bool]`..."""
+
+StrProp = Prop[str]
 """A string, or a callable returning one (a binding)."""
 
-BoolProp = bool | Callable[[], Any]
+BoolProp = Prop[bool]
 """A bool, or a callable returning one (a binding)."""
 
-IntProp = int | Callable[[], Any]
+IntProp = Prop[int]
 """An int, or a callable returning one (a binding)."""
 
-NumProp = int | float | Callable[[], Any]
-"""A number, or a callable returning one (a binding)."""
+NumProp = Prop[float]
+"""A number (an int is fine too), or a callable returning one (a binding)."""
 
 Handler = Callable[[], Any]
 """An event handler. Exceptions it raises are logged; the app keeps running."""
