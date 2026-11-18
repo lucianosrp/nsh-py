@@ -13,6 +13,8 @@ from nsh.primitives.input import KIND as _INPUT
 from nsh.primitives.input import input
 from nsh.primitives.progress import KIND as _PROGRESS
 from nsh.primitives.progress import progress
+from nsh.primitives.radio_group import KIND as _RADIO_GROUP
+from nsh.primitives.radio_group import radio_group
 from nsh.primitives.scroll import KIND as _SCROLL
 from nsh.primitives.scroll import scroll
 from nsh.primitives.select import KIND as _SELECT
@@ -33,22 +35,21 @@ from nsh.primitives.view import view
 # Note: `nsh.primitives.view` is the function, not the module (the import
 # above rebinds it); import a module's other names from the module itself:
 # `from nsh.primitives.view import KIND`.
-KINDS = frozenset(
-    {
-        _CHECKBOX,
-        _IMAGE,
-        _INPUT,
-        _PROGRESS,
-        _SCROLL,
-        _SELECT,
-        _SWITCH,
-        _TAB,
-        _TABS,
-        _TEXT,
-        _VIDEO,
-        _VIEW,
-    }
-)
+KINDS = frozenset({
+    _CHECKBOX,
+    _IMAGE,
+    _INPUT,
+    _PROGRESS,
+    _RADIO_GROUP,
+    _SCROLL,
+    _SELECT,
+    _SWITCH,
+    _TAB,
+    _TABS,
+    _TEXT,
+    _VIDEO,
+    _VIEW,
+})
 """The element kinds the primitives build."""
 
 __all__ = [
@@ -57,6 +58,7 @@ __all__ = [
     "image",
     "input",
     "progress",
+    "radio_group",
     "scroll",
     "select",
     "switch",

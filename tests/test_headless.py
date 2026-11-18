@@ -146,6 +146,18 @@ def test_tabs_example():
         app.wait_for("Invoices, plans and payment methods.")
 
 
+def test_radio_group_example():
+    App = load_example("radio_group")["App"]
+    with open(App) as app:
+        assert app.shows("Selected: Medium")
+        app.press("role:radio[Large]")
+        app.wait_for("Selected: Large")
+        app.press("Clear")
+        app.wait_for("Selected: None")
+        app.press("Reset")
+        app.wait_for("Selected: Medium")
+
+
 def test_counter_decorators_example():
     Counter = load_example("counter_decorators")["Counter"]
     with open(Counter) as app:
