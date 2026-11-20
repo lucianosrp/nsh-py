@@ -53,7 +53,7 @@ COMPONENT_PY = '''\
 
 from __future__ import annotations
 
-from nsh._element import Child, Element, StrProp, merge_class
+from nsh._element import Child, Element, Prop, merge_class
 from nsh.primitives import view
 
 CLASS = "rounded-md border border-border bg-card p-2 gap-2"
@@ -62,7 +62,7 @@ CLASS = "rounded-md border border-border bg-card p-2 gap-2"
 
 def {name}(
     *children: Child,
-    class_: StrProp | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """A {name}: TODO what it shows, then `children`.
@@ -104,14 +104,14 @@ PRIMITIVE_PY = '''\
 
 from __future__ import annotations
 
-from nsh._element import Child, Element, Handler, StrProp, props
+from nsh._element import Child, Element, Handler, Prop, props
 
 KIND = "{name}"
 
 
 def {name}(
     *children: Child,
-    class_: StrProp | None = None,
+    class_: Prop[str] | None = None,
     on_press: Handler | None = None,
     test_id: str | None = None,
 ) -> Element:

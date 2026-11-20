@@ -27,19 +27,8 @@ Child = Union["Element", str, None, Callable[[], Any], list, tuple, "Each[Any]"]
 T = TypeVar("T")
 
 Prop = T | Callable[[], T]
-"""A value, or a callable returning one (a binding): `Prop[str]`, `Prop[bool]`..."""
-
-StrProp = Prop[str]
-"""A string, or a callable returning one (a binding)."""
-
-BoolProp = Prop[bool]
-"""A bool, or a callable returning one (a binding)."""
-
-IntProp = Prop[int]
-"""An int, or a callable returning one (a binding)."""
-
-NumProp = Prop[float]
-"""A number (an int is fine too), or a callable returning one (a binding)."""
+"""A value, or a callable returning one (a binding): `Prop[str]`, `Prop[bool]`,
+`Prop[int]`, `Prop[float]` (an int is fine there too)."""
 
 Handler = Callable[[], Any]
 """An event handler. Exceptions it raises are logged; the app keeps running."""
@@ -64,7 +53,7 @@ def props(**values: Any) -> dict[str, Any]:
     return {k: v for k, v in values.items() if v is not None}
 
 
-def merge_class(base: str, extra: StrProp | None) -> StrProp:
+def merge_class(base: str, extra: Prop[str] | None) -> Prop[str]:
     """`base` classes then the caller's `extra` ones (which win), keeping a
     callable `extra` bound."""
     if extra is None:

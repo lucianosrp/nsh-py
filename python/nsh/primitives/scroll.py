@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nsh._element import Child, Element, Handler, StrProp, props
+from nsh._element import Child, Element, Handler, Prop, props
 
 KIND = "scroll"
 
@@ -10,7 +10,7 @@ KIND = "scroll"
 def scroll(
     *children: Child,
     horizontal: bool = False,
-    class_: StrProp | None = None,
+    class_: Prop[str] | None = None,
     on_press: Handler | None = None,
     test_id: str | None = None,
 ) -> Element:

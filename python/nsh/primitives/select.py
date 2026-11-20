@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from nsh._element import BoolProp, Element, Prop, StrProp, merge_class, props
+from nsh._element import Element, Prop, merge_class, props
 from nsh._signals import Signal, signal
 from nsh.primitives.text import text
 
@@ -27,11 +27,11 @@ def select(
     value: Prop[str | None] = None,
     *,
     options: Sequence[str] | Callable[[], Sequence[str]],
-    placeholder: StrProp = "Select…",
+    placeholder: Prop[str] = "Select…",
     on_change: Callable[[str], Any] | None = None,
-    disabled: BoolProp | None = None,
-    accessibility_label: StrProp | None = None,
-    class_: StrProp | None = None,
+    disabled: Prop[bool] | None = None,
+    accessibility_label: Prop[str] | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """Choose one of `options`, a sequence of unique strings or a callable
