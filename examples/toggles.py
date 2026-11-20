@@ -9,6 +9,7 @@ def Toggles():
     picked = {name: nsh.signal(False) for name in TOPPINGS}
     wifi = nsh.signal(True)
     saved = nsh.signal(0)
+    volume = nsh.signal(40.0)
 
     def picked_count():
         return sum(s() for s in picked.values())
@@ -20,7 +21,7 @@ def Toggles():
     def save():
         saved.update(lambda n: min(n + 25, 100))
 
-    return nsh.view(
+    return nsh.scroll(
         nsh.text("Toppings", class_="text-lg font-semibold"),
         # "All" is checked when every topping is, a dash when some are.
         nsh.checkbox(
@@ -47,7 +48,17 @@ def Toggles():
             nsh.button("Reset", on_press=saved.setter(0)),
             class_="flex-row gap-2",
         ),
-        class_="p-4 gap-3",
+        nsh.text("Volume", class_="text-lg font-semibold pt-2"),
+        nsh.slider(
+            volume,
+            min=0,
+            max=100,
+            step=5,
+            label=lambda: f"{volume():.0f}%",
+            class_="w-64",
+            test_id="volume",
+        ),
+        class_="flex-1 p-4 gap-3",
     )
 
 

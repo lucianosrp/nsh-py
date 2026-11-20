@@ -146,6 +146,17 @@ def test_tabs_example():
         app.wait_for("Invoices, plans and payment methods.")
 
 
+def test_slider_example():
+    App = load_example("slider")["App"]
+    with open(App) as app:
+        assert app.shows("40%")
+        assert app.shows("70%")
+        app.press("+5")
+        app.wait_for("45%")
+        app.press("Mute")
+        app.wait_for("0%")
+
+
 def test_counter_decorators_example():
     Counter = load_example("counter_decorators")["Counter"]
     with open(Counter) as app:
