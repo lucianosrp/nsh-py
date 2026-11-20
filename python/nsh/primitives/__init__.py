@@ -35,21 +35,23 @@ from nsh.primitives.view import view
 # Note: `nsh.primitives.view` is the function, not the module (the import
 # above rebinds it); import a module's other names from the module itself:
 # `from nsh.primitives.view import KIND`.
-KINDS = frozenset({
-    _CHECKBOX,
-    _IMAGE,
-    _INPUT,
-    _PROGRESS,
-    _SCROLL,
-    _SELECT,
-    _SLIDER,
-    _SWITCH,
-    _TAB,
-    _TABS,
-    _TEXT,
-    _VIDEO,
-    _VIEW,
-})
+KINDS = frozenset(
+    {
+        _CHECKBOX,
+        _IMAGE,
+        _INPUT,
+        _PROGRESS,
+        _SCROLL,
+        _SELECT,
+        _SLIDER,
+        _SWITCH,
+        _TAB,
+        _TABS,
+        _TEXT,
+        _VIDEO,
+        _VIEW,
+    }
+)
 """The element kinds the primitives build."""
 
 __all__ = [
