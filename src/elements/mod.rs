@@ -12,6 +12,7 @@ mod checkbox;
 mod image;
 mod input;
 mod progress;
+mod radio_group;
 mod scroll;
 mod select;
 mod switch;
@@ -33,6 +34,7 @@ const KINDS: &[(&str, Build)] = &[
     ("image", image::build),
     ("input", input::build),
     ("progress", progress::build),
+    ("radio_group", radio_group::build),
     ("scroll", scroll::build),
     ("select", select::build),
     ("switch", switch::build),
