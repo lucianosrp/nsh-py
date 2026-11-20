@@ -27,7 +27,7 @@ def quit() -> None:  # noqa: A001
 
         nsh.button("Quit", on_press=nsh.quit)
 
-    On Windows, NSH 0.5.1 ends the process when the app ends, so
+    On Windows, NSH 0.6.1 ends the process when the app ends, so
     `nsh.run` doesn't return there (closing the window does the same).
 
     Safe from any thread. Does nothing when no app is running.
