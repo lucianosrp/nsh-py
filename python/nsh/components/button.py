@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nsh._element import Element, Handler, StrProp, merge_class, props
+from nsh._element import Element, Handler, Prop, merge_class, props
 from nsh.primitives import text
 from nsh.primitives.view import KIND as VIEW
 
@@ -16,10 +16,10 @@ LABEL_CLASS = "text-sm font-medium text-primary-foreground"
 
 
 def button(
-    label: StrProp,
+    label: Prop[str],
     *,
     on_press: Handler | None = None,
-    class_: StrProp | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """A button showing `label`; `on_press` runs when it is pressed.

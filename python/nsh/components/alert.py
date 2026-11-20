@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nsh._element import Child, Element, StrProp, merge_class
+from nsh._element import Child, Element, Prop, merge_class
 from nsh.primitives import text, view
 
 BASE_CLASS = "rounded-xl border border-border bg-muted p-6 gap-2 text-foreground"
@@ -22,11 +22,11 @@ VARIANT_CLASSES = {"default": DEFAULT_CLASS, "destructive": DESTRUCTIVE_CLASS}
 
 
 def alert(
-    title: StrProp,
+    title: Prop[str],
     *children: Child,
-    description: StrProp | None = None,
+    description: Prop[str] | None = None,
     variant: str = "default",
-    class_: StrProp | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """An alert showing `title`, an optional `description`, then `children`.

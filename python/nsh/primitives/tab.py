@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nsh._element import BoolProp, Child, Element, Handler, StrProp, merge_class, props
+from nsh._element import Child, Element, Handler, Prop, merge_class, props
 
 KIND = "tab"
 
@@ -12,10 +12,10 @@ TAB_CLASS = "px-3 py-2 text-sm text-muted-foreground selected:text-foreground di
 
 def tab(
     *children: Child,
-    selected: BoolProp | None = None,
+    selected: Prop[bool] | None = None,
     on_press: Handler | None = None,
-    disabled: BoolProp | None = None,
-    class_: StrProp | None = None,
+    disabled: Prop[bool] | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """One tab of a [`tabs`] list: its label is `children`.

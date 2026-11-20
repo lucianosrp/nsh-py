@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nsh._element import Element, StrProp, merge_class
+from nsh._element import Element, Prop, merge_class
 from nsh.primitives import text, view
 
 CLASS = "self-start flex-row items-center rounded-full border px-2.5 py-0.5"
@@ -19,10 +19,10 @@ _VARIANTS = {
 
 
 def badge(
-    label: StrProp,
+    label: Prop[str],
     *,
     variant: str = "default",
-    class_: StrProp | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """A compact label for a status or count.

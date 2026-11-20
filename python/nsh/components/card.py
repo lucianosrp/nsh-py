@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nsh._element import Child, Element, StrProp, merge_class
+from nsh._element import Child, Element, Prop, merge_class
 from nsh.primitives import text, view
 
 CLASS = "rounded-xl border border-border bg-card p-6 gap-2"
@@ -14,9 +14,9 @@ DESCRIPTION_CLASS = "text-sm text-muted-foreground"
 
 def card(
     *children: Child,
-    title: StrProp | None = None,
-    description: StrProp | None = None,
-    class_: StrProp | None = None,
+    title: Prop[str] | None = None,
+    description: Prop[str] | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """A card: an optional `title` and `description`, then `children`.

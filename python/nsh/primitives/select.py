@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from nsh._element import BoolProp, Element, StrProp, merge_class, props
+from nsh._element import Element, Prop, merge_class, props
 from nsh._signals import Signal, signal
 from nsh.primitives.text import text
 
@@ -24,14 +24,14 @@ ITEM_CLASS = (
 
 
 def select(
-    value: StrProp | None = None,
+    value: Prop[str | None] = None,
     *,
     options: Sequence[str] | Callable[[], Sequence[str]],
-    placeholder: StrProp = "Select…",
+    placeholder: Prop[str] = "Select…",
     on_change: Callable[[str], Any] | None = None,
-    disabled: BoolProp | None = None,
-    accessibility_label: StrProp | None = None,
-    class_: StrProp | None = None,
+    disabled: Prop[bool] | None = None,
+    accessibility_label: Prop[str] | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """Choose one of `options`, a sequence of unique strings or a callable
@@ -54,9 +54,12 @@ def select(
         nsh.select(size, options=["Small", "Medium", "Large"],
                    accessibility_label="Size")
     """
-    if not callable(value) or isinstance(value, Signal):
+    read: Callable[[], str | None]
+    if callable(value) and not isinstance(value, Signal):
+        read = value
+    else:
         own = value if isinstance(value, Signal) else signal(value)
-        value = own
+        read = own
         if on_change is None:
             on_change = own.set
         else:
@@ -69,7 +72,7 @@ def select(
             on_change = changed
 
     def label() -> str:
-        chosen = value()
+        chosen = read()
         items = options() if callable(options) else options
         if chosen is not None and chosen in items:
             return chosen
@@ -78,7 +81,7 @@ def select(
     return Element(
         KIND,
         props(
-            value=value,
+            value=read,
             options=options,
             placeholder=placeholder,
             on_change=on_change,

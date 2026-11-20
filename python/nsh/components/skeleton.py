@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nsh._element import Element, StrProp, merge_class
+from nsh._element import Element, Prop, merge_class
 from nsh.primitives import view
 
 CLASS = "rounded-md bg-muted animate-pulse"
@@ -10,7 +10,7 @@ CLASS = "rounded-md bg-muted animate-pulse"
 
 def skeleton(
     *,
-    class_: StrProp | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """A rounded, muted placeholder that pulses while content loads.
