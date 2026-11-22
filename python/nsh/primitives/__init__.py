@@ -17,6 +17,8 @@ from nsh.primitives.scroll import KIND as _SCROLL
 from nsh.primitives.scroll import scroll
 from nsh.primitives.select import KIND as _SELECT
 from nsh.primitives.select import select
+from nsh.primitives.slider import KIND as _SLIDER
+from nsh.primitives.slider import slider
 from nsh.primitives.switch import KIND as _SWITCH
 from nsh.primitives.switch import switch
 from nsh.primitives.tab import KIND as _TAB
@@ -41,6 +43,7 @@ KINDS = frozenset(
         _PROGRESS,
         _SCROLL,
         _SELECT,
+        _SLIDER,
         _SWITCH,
         _TAB,
         _TABS,
@@ -59,6 +62,7 @@ __all__ = [
     "progress",
     "scroll",
     "select",
+    "slider",
     "switch",
     "tab",
     "tabs",
