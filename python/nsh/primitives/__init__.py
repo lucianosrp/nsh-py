@@ -13,6 +13,8 @@ from nsh.primitives.input import KIND as _INPUT
 from nsh.primitives.input import input
 from nsh.primitives.progress import KIND as _PROGRESS
 from nsh.primitives.progress import progress
+from nsh.primitives.radio_group import KIND as _RADIO_GROUP
+from nsh.primitives.radio_group import radio_group
 from nsh.primitives.scroll import KIND as _SCROLL
 from nsh.primitives.scroll import scroll
 from nsh.primitives.select import KIND as _SELECT
@@ -41,6 +43,7 @@ KINDS = frozenset(
         _IMAGE,
         _INPUT,
         _PROGRESS,
+        _RADIO_GROUP,
         _SCROLL,
         _SELECT,
         _SLIDER,
@@ -60,6 +63,7 @@ __all__ = [
     "image",
     "input",
     "progress",
+    "radio_group",
     "scroll",
     "select",
     "slider",
