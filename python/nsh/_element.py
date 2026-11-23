@@ -16,7 +16,7 @@ Maintainers own this module; contributions go in `nsh.primitives`
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 if TYPE_CHECKING:
     from nsh._each import Each
@@ -24,17 +24,11 @@ if TYPE_CHECKING:
 Child = Union["Element", str, None, Callable[[], Any], list, tuple, "Each[Any]"]
 """A child: an element, a string (a text), None, a list, a callable, or `nsh.each`."""
 
-StrProp = str | Callable[[], Any]
-"""A string, or a callable returning one (a binding)."""
+T = TypeVar("T")
 
-BoolProp = bool | Callable[[], Any]
-"""A bool, or a callable returning one (a binding)."""
-
-IntProp = int | Callable[[], Any]
-"""An int, or a callable returning one (a binding)."""
-
-NumProp = int | float | Callable[[], Any]
-"""A number, or a callable returning one (a binding)."""
+Prop = T | Callable[[], T]
+"""A value, or a callable returning one (a binding): `Prop[str]`, `Prop[bool]`,
+`Prop[int]`, `Prop[float]` (an int is fine there too)."""
 
 Handler = Callable[[], Any]
 """An event handler. Exceptions it raises are logged; the app keeps running."""
@@ -59,7 +53,7 @@ def props(**values: Any) -> dict[str, Any]:
     return {k: v for k, v in values.items() if v is not None}
 
 
-def merge_class(base: str, extra: StrProp | None) -> StrProp:
+def merge_class(base: str, extra: Prop[str] | None) -> Prop[str]:
     """`base` classes then the caller's `extra` ones (which win), keeping a
     callable `extra` bound."""
     if extra is None:

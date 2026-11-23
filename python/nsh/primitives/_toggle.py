@@ -5,12 +5,12 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from nsh._element import BoolProp, StrProp
+from nsh._element import Prop
 from nsh._signals import Signal, signal
 
 
 def state(
-    checked: BoolProp | None, on_change: Callable[[bool], Any] | None
+    checked: Prop[bool] | None, on_change: Callable[[bool], Any] | None
 ) -> tuple[Callable[[], Any], Callable[[bool], Any] | None]:
     """The toggle's value (a callable the toggle binds) and its press
     handler, from what the caller passed:
@@ -43,7 +43,7 @@ def check_label(name: str, label: object) -> None:
         )
 
 
-def reader(value: BoolProp | None) -> Callable[[], bool]:
+def reader(value: Prop[bool] | None) -> Callable[[], bool]:
     """`value` as a function to read in a binding."""
     if callable(value):
         return lambda: bool(value())
@@ -51,7 +51,7 @@ def reader(value: BoolProp | None) -> Callable[[], bool]:
     return lambda: fixed
 
 
-def label_class(base: str, disabled: BoolProp | None) -> StrProp:
+def label_class(base: str, disabled: Prop[bool] | None) -> Prop[str]:
     """`base`, dimmed while `disabled`: the label's own `disabled:` can't
     follow the toggle (only its parts' do)."""
     if callable(disabled):

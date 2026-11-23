@@ -15,6 +15,7 @@ mod progress;
 mod radio_group;
 mod scroll;
 mod select;
+mod slider;
 mod switch;
 mod tab;
 mod tabs;
@@ -37,6 +38,7 @@ const KINDS: &[(&str, Build)] = &[
     ("radio_group", radio_group::build),
     ("scroll", scroll::build),
     ("select", select::build),
+    ("slider", slider::build),
     ("switch", switch::build),
     ("tab", tab::build),
     ("tabs", tabs::build),

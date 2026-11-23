@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from nsh._element import BoolProp, Child, Element, StrProp, props
+from nsh._element import Child, Element, Prop, props
 from nsh.primitives import _toggle
 from nsh.primitives.text import text
 
@@ -29,13 +29,13 @@ DASH = "–"
 
 
 def checkbox(
-    label: StrProp | None = None,
+    label: Prop[str] | None = None,
     *,
-    checked: BoolProp | None = None,
+    checked: Prop[bool] | None = None,
     on_change: Callable[[bool], Any] | None = None,
-    disabled: BoolProp | None = None,
-    indeterminate: BoolProp | None = None,
-    class_: StrProp | None = None,
+    disabled: Prop[bool] | None = None,
+    indeterminate: Prop[bool] | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """A checkbox: a box with a check mark, then `label`.

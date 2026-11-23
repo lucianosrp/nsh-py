@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nsh._element import Element, StrProp, merge_class
+from nsh._element import Element, Prop, merge_class
 from nsh.primitives import view
 
 HORIZONTAL_CLASS = "h-px w-full bg-border"
@@ -15,7 +15,7 @@ VERTICAL_CLASS = "w-px h-full bg-border"
 def separator(
     *,
     vertical: bool = False,
-    class_: StrProp | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """A separator: A horizontal line, or a vertical one when `vertical` is true.

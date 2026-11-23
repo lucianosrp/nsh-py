@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nsh._element import BoolProp, Child, Element, NumProp, StrProp, props
+from nsh._element import Child, Element, Prop, props
 from nsh.primitives.text import text
 
 KIND = "progress"
@@ -21,13 +21,13 @@ LABEL_CLASS = "mt-1 text-sm text-muted-foreground"
 
 
 def progress(
-    value: NumProp | None = None,
-    label: StrProp | None = None,
+    value: Prop[float] | None = None,
+    label: Prop[str] | None = None,
     *,
     max: float = 100,  # noqa: A002
-    indeterminate: BoolProp | None = None,
+    indeterminate: Prop[bool] | None = None,
     color: str | None = None,
-    class_: StrProp | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """A progress bar: how far `value` is out of `max` (100 by default, so

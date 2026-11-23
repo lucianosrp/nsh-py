@@ -7,7 +7,7 @@ from os import PathLike
 from typing import Any, NamedTuple
 
 from nsh import _core
-from nsh._element import BoolProp, Element, Handler, NumProp, StrProp, props
+from nsh._element import Element, Handler, Prop, props
 from nsh.primitives.image import FITS
 
 KIND = "video"
@@ -45,21 +45,21 @@ class Video(Element):
 def video(
     src: Src,
     *,
-    paused: BoolProp | None = None,
-    muted: BoolProp | None = None,
-    volume: NumProp | None = None,
-    rate: NumProp | None = None,
-    repeat: BoolProp | None = None,
-    controls: BoolProp | None = None,
-    fit: StrProp | None = None,
-    progress_interval: NumProp | None = None,
+    paused: Prop[bool] | None = None,
+    muted: Prop[bool] | None = None,
+    volume: Prop[float] | None = None,
+    rate: Prop[float] | None = None,
+    repeat: Prop[bool] | None = None,
+    controls: Prop[bool] | None = None,
+    fit: Prop[str] | None = None,
+    progress_interval: Prop[float] | None = None,
     on_load_start: Handler | None = None,
     on_load: Callable[[VideoInfo], Any] | None = None,
     on_progress: Callable[[VideoProgress], Any] | None = None,
     on_buffer: Callable[[bool], Any] | None = None,
     on_end: Handler | None = None,
     on_error: Callable[[str], Any] | None = None,
-    class_: StrProp | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Video:
     """A video playing the file or stream at `src`.

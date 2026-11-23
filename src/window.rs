@@ -37,7 +37,7 @@ fn on_engine(job: impl FnOnce() + Send + 'static) {
 }
 
 /// Quits the app, as the Quit menu item does: its windows close and
-/// `nsh.run` returns (on Windows, NSH 0.5.1's `run_app` ends the process
+/// `nsh.run` returns (on Windows, NSH 0.6.1's `run_app` ends the process
 /// instead). Safe from any thread; does nothing with no app.
 #[pyfunction]
 pub(crate) fn quit() {

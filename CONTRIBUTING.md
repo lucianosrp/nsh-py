@@ -63,7 +63,7 @@ component, replace `card` with its name.
 
 from __future__ import annotations
 
-from nsh._element import Child, Element, StrProp, merge_class
+from nsh._element import Child, Element, Prop, merge_class
 from nsh.primitives import text, view
 
 CLASS = "rounded-xl border border-border bg-card p-6 gap-2"
@@ -75,9 +75,9 @@ DESCRIPTION_CLASS = "text-sm text-muted-foreground"
 
 def card(
     *children: Child,
-    title: StrProp | None = None,
-    description: StrProp | None = None,
-    class_: StrProp | None = None,
+    title: Prop[str] | None = None,
+    description: Prop[str] | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """A card: an optional `title` and `description`, then `children`.
@@ -112,7 +112,7 @@ What to notice:
   tests can import them.
 - `merge_class(CLASS, class_)` puts the caller's classes after ours, so
   `class_="w-80"` wins. It keeps a callable `class_` bound.
-- `title` and `description` are `StrProp`: a string, or a callable that
+- `title` and `description` are `Prop[str]`: a string, or a callable that
   `text` binds. `title=lambda: f"Hello, {name()}"` updates by itself.
 - `props(...)` (`nsh._element`) drops props left at `None`. `view` already
   does that, so `card` doesn't need it; use it to build an `Element`
@@ -188,7 +188,7 @@ finished code is in the repo (`src/elements/input.rs`,
 `examples/form.py`); the snippets below are simplified (the real `input`
 also takes `disabled`, and a signal as `value`). To check a call against
 NSH's source, which matches our pin:
-`~/.cargo/registry/src/index.crates.io-*/nsh-core-0.5.1/src/element/host.rs`
+`~/.cargo/registry/src/index.crates.io-*/nsh-core-0.6.1/src/element/host.rs`
 (`pub fn input`, `impl Input`; on Windows, `%USERPROFILE%\.cargo\registry\src\`).
 Binding an nsh-base component (a checkbox, tabs, a dialog) works a little
 differently: see "Binding nsh-base components" in `docs/architecture.md`,
@@ -269,18 +269,18 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from nsh._element import Element, StrProp, props
+from nsh._element import Element, Prop, props
 
 KIND = "input"
 
 
 def input(  # noqa: A001
     *,
-    value: StrProp | None = None,
-    placeholder: StrProp | None = None,
+    value: Prop[str] | None = None,
+    placeholder: Prop[str] | None = None,
     on_change: Callable[[str], Any] | None = None,
     on_submit: Callable[[str], Any] | None = None,
-    class_: StrProp | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """A text field: `nsh.input(value=name, on_change=name.set)`."""
@@ -391,7 +391,7 @@ maintainer.
 - **Never hold the GIL while waiting on the engine.** Wrap blocking calls
   in `py.detach(|| ...)`. The engine needs the GIL to run your Python
   callbacks; if you hold it and wait, both sides wait forever.
-- **Don't bump the NSH pins** (`=0.5.1`) in a sprint PR. Bumps are
+- **Don't bump the NSH pins** (`=0.6.1`) in a sprint PR. Bumps are
   deliberate, one PR each.
 - **Never depend on the crates.io crate called `nsh`.** It's an unrelated
   shell. NSH's crates are `nsh-core`, `nsh-base` and so on.

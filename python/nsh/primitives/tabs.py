@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nsh._element import Child, Element, StrProp, merge_class, props
+from nsh._element import Child, Element, Prop, merge_class, props
 
 KIND = "tabs"
 
@@ -15,8 +15,8 @@ INDICATOR_CLASS = "bottom-0 h-0.5 bg-primary"
 
 def tabs(
     *children: Child,
-    class_: StrProp | None = None,
-    indicator_class: StrProp | None = INDICATOR_CLASS,
+    class_: Prop[str] | None = None,
+    indicator_class: Prop[str] | None = INDICATOR_CLASS,
     test_id: str | None = None,
 ) -> Element:
     """A tab list: its children are `nsh.tab`s (and any views between them).
