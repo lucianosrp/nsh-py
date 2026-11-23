@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from nsh._element import BoolProp, Child, Element, NumProp, StrProp, props
+from nsh._element import Child, Element, Prop, props
 from nsh._signals import Signal
 from nsh.primitives.text import text
 
@@ -32,16 +32,16 @@ LABEL_CLASS = "mt-1 text-sm text-muted-foreground"
 
 
 def slider(
-    value: NumProp | None = None,
+    value: Prop[float] | None = None,
     *,
     min: float = 0,  # noqa: A002
     max: float = 100,  # noqa: A002
     step: float = 1,
     on_change: Callable[[float], Any] | None = None,
-    disabled: BoolProp | None = None,
-    accessibility_label: StrProp | None = None,
-    label: StrProp | None = None,
-    class_: StrProp | None = None,
+    disabled: Prop[bool] | None = None,
+    accessibility_label: Prop[str] | None = None,
+    label: Prop[str] | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """A slider: pick a number along a track between `min` and `max`
