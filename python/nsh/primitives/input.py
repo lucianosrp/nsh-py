@@ -5,25 +5,25 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from nsh._element import BoolProp, Element, IntProp, StrProp, props
+from nsh._element import Element, Prop, props
 from nsh._signals import Signal
 
 KIND = "input"
 
 
 def input(  # noqa: A001
-    value: StrProp | None = None,
+    value: Prop[str] | None = None,
     *,
-    placeholder: StrProp | None = None,
+    placeholder: Prop[str] | None = None,
     on_change: Callable[[str], Any] | None = None,
     on_submit: Callable[[str], Any] | None = None,
-    class_: StrProp | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
-    disabled: BoolProp | None = None,
-    readonly: BoolProp | None = None,
-    masked: BoolProp | None = None,
-    max_length: IntProp | None = None,
-    multiline: BoolProp | None = None,
+    disabled: Prop[bool] | None = None,
+    readonly: Prop[bool] | None = None,
+    masked: Prop[bool] | None = None,
+    max_length: Prop[int] | None = None,
+    multiline: Prop[bool] | None = None,
 ) -> Element:
     """A text field.
 

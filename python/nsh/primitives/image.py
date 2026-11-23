@@ -6,7 +6,7 @@ from collections.abc import Callable
 from os import PathLike
 from typing import Any
 
-from nsh._element import Element, StrProp, props
+from nsh._element import Element, Prop, props
 
 KIND = "image"
 
@@ -21,9 +21,9 @@ Src = str | PathLike[str] | bytes | bytearray | Callable[[], Any]
 def image(
     src: Src,
     *,
-    alt: StrProp | None = None,
-    fit: StrProp | None = None,
-    class_: StrProp | None = None,
+    alt: Prop[str] | None = None,
+    fit: Prop[str] | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """A picture.

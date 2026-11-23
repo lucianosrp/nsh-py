@@ -18,7 +18,7 @@ import numbers
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import Any
 
-from nsh._element import Child, Element, StrProp, merge_class
+from nsh._element import Child, Element, Prop, merge_class
 from nsh.primitives import text, view
 
 ROOT_CLASS = "flex-col rounded-md border border-border overflow-hidden"
@@ -68,7 +68,7 @@ def table(
     format: Format | Mapping[Any, Format] | None = None,  # noqa: A002
     widths: Mapping[Any, str] | None = None,
     cell_class: Mapping[Any, Callable[[Any], str]] | None = None,
-    class_: StrProp | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """A table of `data`: a header row, then one row per record.

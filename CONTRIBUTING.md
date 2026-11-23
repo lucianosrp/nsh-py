@@ -63,7 +63,7 @@ component, replace `card` with its name.
 
 from __future__ import annotations
 
-from nsh._element import Child, Element, StrProp, merge_class
+from nsh._element import Child, Element, Prop, merge_class
 from nsh.primitives import text, view
 
 CLASS = "rounded-xl border border-border bg-card p-6 gap-2"
@@ -75,9 +75,9 @@ DESCRIPTION_CLASS = "text-sm text-muted-foreground"
 
 def card(
     *children: Child,
-    title: StrProp | None = None,
-    description: StrProp | None = None,
-    class_: StrProp | None = None,
+    title: Prop[str] | None = None,
+    description: Prop[str] | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """A card: an optional `title` and `description`, then `children`.
@@ -112,7 +112,7 @@ What to notice:
   tests can import them.
 - `merge_class(CLASS, class_)` puts the caller's classes after ours, so
   `class_="w-80"` wins. It keeps a callable `class_` bound.
-- `title` and `description` are `StrProp`: a string, or a callable that
+- `title` and `description` are `Prop[str]`: a string, or a callable that
   `text` binds. `title=lambda: f"Hello, {name()}"` updates by itself.
 - `props(...)` (`nsh._element`) drops props left at `None`. `view` already
   does that, so `card` doesn't need it; use it to build an `Element`
@@ -269,18 +269,18 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from nsh._element import Element, StrProp, props
+from nsh._element import Element, Prop, props
 
 KIND = "input"
 
 
 def input(  # noqa: A001
     *,
-    value: StrProp | None = None,
-    placeholder: StrProp | None = None,
+    value: Prop[str] | None = None,
+    placeholder: Prop[str] | None = None,
     on_change: Callable[[str], Any] | None = None,
     on_submit: Callable[[str], Any] | None = None,
-    class_: StrProp | None = None,
+    class_: Prop[str] | None = None,
     test_id: str | None = None,
 ) -> Element:
     """A text field: `nsh.input(value=name, on_change=name.set)`."""
