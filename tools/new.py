@@ -368,7 +368,7 @@ def next_steps(kind: str, name: str) -> str:
             f"  2. Extend tests/components/test_{name}.py.\n"
             f"  3. uv run pytest -q tests\n"
             f"  4. Look at it: add examples/{name}.py and run it with uv run python.\n"
-            f"  5. Open a PR with a screenshot (SPRINT.md has the checklist)."
+            f"  5. Open a PR with a screenshot (CONTRIBUTING.md has the checklist)."
         )
     return (
         f"Next:\n"
@@ -377,7 +377,7 @@ def next_steps(kind: str, name: str) -> str:
         f"  3. Extend tests/primitives/test_{name}.py.\n"
         f"  4. uv run pytest -q tests  (this rebuilds the extension)\n"
         f"  5. cargo fmt && cargo clippy -- -D warnings\n"
-        f"  6. Add examples/{name}.py, then open a PR (SPRINT.md has the checklist)."
+        f"  6. Add examples/{name}.py, then open a PR (CONTRIBUTING.md has the checklist)."
     )
 
 

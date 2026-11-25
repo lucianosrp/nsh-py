@@ -1,8 +1,70 @@
 # Contributing to nsh-py
 
-This page is the how-to. [SPRINT.md](SPRINT.md) has the tracks, the setup,
-the workflow and the PR checklist, so read that first.
+This page gets you from a fresh clone to a merged PR: setup, the workflow,
+two walkthroughs and the PR checklist.
 [docs/architecture.md](docs/architecture.md) explains how the pieces fit.
+
+## Setup
+
+Pick the path for what you'll change. Both end with tests passing and a
+window opening.
+
+### Python only: no Rust, no LLVM, no GTK dev packages
+
+CI keeps a prebuilt core of `main` (the compiled extension) on the `dev-core`
+release. You download it once and run everything straight from the checkout.
+
+1. Install [uv](https://docs.astral.sh/uv/) and Git. On Linux you also need the GTK 4 and GStreamer
+   *runtime* (GTK 4.14+, Ubuntu 24.04+, Debian 13, Fedora 40+, Arch; on Ubuntu
+   `sudo apt install libgtk-4-1 libgstreamer1.0-0 libgstreamer-plugins-base1.0-0`). macOS needs 14+ and Windows 10 1809+.
+2. Clone the repo, then fetch the core and check it works:
+   ```sh
+   uv run --no-project python tools/fetch_core.py                   # downloads python/nsh/_core.*
+   uv run --no-project --with pytest pytest -q tests                # headless tests
+   uv run --no-project python tools/run.py examples/counter.py      # opens a window
+   ```
+   `tools/run.py` runs a script with `python/` on the import path (`nsh` isn't
+   installed in this flow). `--no-project` stops uv from building the Rust extension.
+3. If you branch from an old `main`, or someone changed Rust, `fetch_core.py` warns that your
+   Rust differs from the prebuilt core. Rebase on `main` and fetch again (`--force` fetches
+   even when the core looks current). If you need your own Rust, use the other path.
+
+Python-only work stays in `python/nsh/components/`, `examples/` and `tests/`. Editing
+`src/*.rs` needs the Rust path.
+
+### Python + Rust, or platform work: build the extension yourself
+
+1. Install [uv](https://docs.astral.sh/uv/) and Git.
+2. Install the platform requirements:
+   - **Linux:** GTK 4.14+ and glibc 2.39+ (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch),
+     plus `clang` and the GTK and GStreamer dev packages: `sudo apt install clang libclang-dev libgtk-4-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev`.
+     Ubuntu 22.04 and Debian 12 are too old.
+   - **macOS:** macOS 14+ and the Xcode Command Line Tools (`xcode-select --install`).
+   - **Windows:** Windows 10 1809+, Visual Studio Build Tools (C++ workload), and LLVM
+     (`winget install LLVM.LLVM`).
+3. Install Rust from [rustup.rs](https://rustup.rs). The repo pins the version in
+   `rust-toolchain.toml`, and rustup fetches it the first time you build.
+4. Clone the repo and check it works:
+   ```sh
+   uv run pytest -q tests            # first run builds the extension (a few minutes)
+   uv run python examples/counter.py # opens a window
+   ```
+
+`tools/doctor.py` checks this path's requirements. Don't mix the two paths in one checkout
+without a reason: a fetched core in `python/nsh/` is overwritten by `uv run`'s build, and
+`fetch_core.py` overwrites a local build (it tells you).
+
+## Workflow
+
+1. Pick an issue and comment that you're on it. The labels say what it needs:
+   `python-only` (and `good-first-issue`), `python+rust`, or `platform`
+   (a macOS or Windows machine).
+2. Branch: `git switch -c <short-topic>`.
+3. Make the change in the right place. `tools/new.py` writes a starting
+   point for a component or a primitive (the walkthroughs below).
+4. Test, lint and look at it (the commands are just below).
+5. Open a PR with a screenshot if it changes what you see, and go through
+   the [PR checklist](#pr-checklist).
 
 ## Orientation
 
@@ -41,8 +103,8 @@ You never run `maturin` by hand.
 **No Rust installed?** If you only touch Python, skip the build: fetch the
 prebuilt core once with `uv run --no-project python tools/fetch_core.py`, then
 run `uv run --no-project --with pytest pytest -q tests` and
-`uv run --no-project python tools/run.py examples/counter.py`. SPRINT.md
-(Setup) has the details and says when the core is out of date.
+`uv run --no-project python tools/run.py examples/counter.py`. [Setup](#setup)
+has the details and says when the core is out of date.
 
 ## Walkthrough A: add a component (Python only)
 
@@ -172,7 +234,7 @@ uv run pytest -q tests
 uv run python examples/card.py
 ```
 
-Then open a PR with a screenshot (SPRINT.md has the checklist).
+Then open a PR with a screenshot (see the [PR checklist](#pr-checklist)).
 
 ## Walkthrough B: add a primitive (Python + Rust)
 
@@ -391,7 +453,7 @@ maintainer.
 - **Never hold the GIL while waiting on the engine.** Wrap blocking calls
   in `py.detach(|| ...)`. The engine needs the GIL to run your Python
   callbacks; if you hold it and wait, both sides wait forever.
-- **Don't bump the NSH pins** (`=0.7.0`) in a sprint PR. Bumps are
+- **Don't bump the NSH pins** (`=0.7.0`) in a feature PR. Bumps are
   deliberate, one PR each.
 - **Never depend on the crates.io crate called `nsh`.** It's an unrelated
   shell. NSH's crates are `nsh-core`, `nsh-base` and so on.
@@ -441,3 +503,19 @@ Use it as a context manager so the engine stops at the end.
 A good component test has two parts: one on the props (`el.kind`,
 `el.props`, `el.children`: no app, instant) and one with `open(...)` that
 checks what shows and what a press does. See `tests/components/`.
+
+## PR checklist
+
+- [ ] `uv run pytest -q tests` passes.
+- [ ] `ruff check` and `ruff format --check` pass (CI runs them).
+- [ ] New components or primitives have a test, and a docstring with an example.
+- [ ] Public names are exported from `nsh/__init__.py`.
+- [ ] Rust changes pass `cargo fmt` and `cargo clippy -- -D warnings`.
+- [ ] One topic per PR, and commits that each make sense on their own.
+
+## Ground rules
+
+- Be kind, and ask early: a maintainer would rather unblock you in five
+  minutes than find out after an hour.
+- Using an AI coding agent is fine. Point it at `AGENTS.md`, and review
+  what it writes before you push.

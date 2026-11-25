@@ -8,7 +8,7 @@
 #   {"commit": ..., "source_hash": ..., "wheels": {"<platform key>": "<file>"}}
 #
 # `python tools/fetch_core.py` reads that manifest and pulls the compiled
-# extension into python/nsh/ (see SPRINT.md). The same release also works as
+# extension into python/nsh/ (see CONTRIBUTING.md). The same release also works as
 # a bleeding-edge find-links URL:
 #   uv pip install nsh-py \
 #     --find-links https://github.com/lucianosrp/nsh-py/releases/expanded_assets/dev-core
@@ -63,7 +63,7 @@ jobs:
           Rolling build of \`main\` at ${GITHUB_SHA}. Replaced on every push to main.
 
           For Python-only contributors: \`python tools/fetch_core.py\` downloads the right wheel's
-          compiled extension into \`python/nsh/\` (see SPRINT.md). \`manifest.json\` records the commit
+          compiled extension into \`python/nsh/\` (see CONTRIBUTING.md). \`manifest.json\` records the commit
           and a hash of the Rust sources, so the tool can tell when your checkout differs.
 
           Bleeding-edge install:

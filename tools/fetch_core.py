@@ -5,7 +5,7 @@ For Python-only contributors: CI keeps a rolling ``dev-core`` prerelease
 with wheels built from ``main``. This tool picks the wheel for your OS and
 CPU, pulls out the compiled extension (``nsh/_core.*``) and drops it into
 ``python/nsh/``. After that you run tests and examples straight from the
-checkout, with no Rust, no LLVM and no GTK dev packages (see SPRINT.md).
+checkout, with no Rust, no LLVM and no GTK dev packages (see CONTRIBUTING.md).
 Standard library only; works on Python 3.10+.
 
 Usage:
@@ -110,7 +110,7 @@ def pick_wheel(manifest: dict, key: str) -> str:
         have = ", ".join(sorted(wheels)) or "none"
         raise FetchError(
             f"no prebuilt core for {key} (the release has: {have}). "
-            "Build locally instead: `uv run pytest -q tests` (needs Rust, see SPRINT.md)."
+            "Build locally instead: `uv run pytest -q tests` (needs Rust, see CONTRIBUTING.md)."
         )
     return wheels[key]
 
@@ -231,7 +231,8 @@ def run(base_url: str, force: bool, dry_run: bool, require_match: bool = False) 
             f"\nWarning: your checkout's Rust differs from the prebuilt core (commit {short}).\n"
             "  The core may not match the Python code you have (missing functions, changed\n"
             "  behaviour). Rebase on main (`git pull --rebase origin main`) and fetch again,\n"
-            "  or build locally instead (`uv run pytest -q tests`; needs Rust, see SPRINT.md).\n"
+            "  or build locally instead (`uv run pytest -q tests`; needs Rust,\n"
+            "  see CONTRIBUTING.md).\n"
         )
 
     if dry_run:
@@ -253,7 +254,7 @@ def run(base_url: str, force: bool, dry_run: bool, require_match: bool = False) 
             "Note: the Linux core needs the GTK 4.14+ runtime (no dev packages), "
             "Ubuntu 24.04+ / Debian 13 / Fedora 40+ / Arch."
         )
-    print("Done. Run the tests: see 'Setup' in SPRINT.md.")
+    print("Done. Run the tests: see 'Setup' in CONTRIBUTING.md.")
     return 0
 
 
