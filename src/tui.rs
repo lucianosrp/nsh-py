@@ -286,6 +286,8 @@ fn modifiers(keys: event::KeyModifiers) -> Modifiers {
         alt: keys.contains(event::KeyModifiers::ALT),
         shift: keys.contains(event::KeyModifiers::SHIFT),
         cmd: keys.contains(event::KeyModifiers::SUPER),
+        // crossterm can't tell AltGr from Ctrl+Alt.
+        alt_graph: false,
     }
 }
 

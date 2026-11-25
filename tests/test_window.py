@@ -61,7 +61,7 @@ def test_window_methods_reach_the_platform():
         window.focus()
         wait_until(lambda: app.window().visible and app.window().focused)
         app.press("Close")
-        assert not app.window().visible  # the main window closing ends a real app
+        assert app.window() is None  # closed: in a real app, nsh.run returns
 
 
 def test_window_methods_work_from_another_thread():
