@@ -3,7 +3,7 @@
 nsh-py apps run in a browser: Pyodide runs the Python, and NSH's DOM
 backend renders it, with Python handlers, signals, `@nsh.computed`,
 `nsh.table`, `nsh.card` and timers. The same app file runs on desktop and
-on the web. NSH 0.5.1, Pyodide 314.0.7, stable Rust. Not a supported
+on the web. NSH 0.7.0, Pyodide 314.0.7, stable Rust. Not a supported
 target yet: no wheels, no CI.
 
 NSH 0.5.0 has our emscripten libc fix
@@ -55,6 +55,20 @@ and the stopwatch (a class component with `nsh.set_interval`). Earlier, on
 and `class_` update; in the poll, voting re-sorts the table and updates
 the vote count; `nsh.set_interval`/`set_timeout` fire, and
 `nsh.call_soon` called before the app starts runs once its pump does.
+
+## NSH 0.7.0 (2026-11-25)
+
+Skips 0.6.x for the web (the desktop pin went 0.5.1 → 0.6.1 → 0.7.0, but
+`site/nsh.js` stayed on 0.5.1 until now). Upstream's `nsh.js` grew from
+8.8k to 11k lines (windows, on-demand side modules, file drop), none of
+it in the part of `Player.load` we hook: a three-way merge of our patch
+(0.5.1 → ours) onto 0.7.0's file applied with no conflicts, so
+`site/nsh.js` is 0.7.0's file with the same one `instantiate` option.
+The Rust root now declares its `main` window (0.7 shows nothing on the
+desktops without one); off the desktops that window shows its content
+in the page, so the web needs nothing more. The wheel is 7.3 MB.
+Checked in a browser: the counter's +1 and the poll's voting (the table
+re-sorts) call the Python handlers.
 
 ## NSH 0.5.1 (2026-11-15)
 
