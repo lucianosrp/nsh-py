@@ -13,15 +13,15 @@ crate-type = ["cdylib"]
 [dependencies]
 pyo3 = { version = "0.30", features = ["extension-module", "abi3-py310"] }
 # NSH is pre-1.0 and its 0.x releases break: pin exact versions.
-nsh-core = "=0.6.1"
-nsh-base = { version = "=0.6.1", default-features = false }
-nsh-engine = { version = "=0.6.1", default-features = false }
+nsh-core = "=0.7.0"
+nsh-base = { version = "=0.7.0", default-features = false }
+nsh-engine = { version = "=0.7.0", default-features = false }
 # The headless driver (nsh.testing): no QuickJS without default features.
-nsh-testing = { version = "=0.6.1", default-features = false }
+nsh-testing = { version = "=0.7.0", default-features = false }
 
 # The terminal (nsh.run(platform="tui")): every desktop OS, not the web.
 [target.'cfg(not(target_os = "emscripten"))'.dependencies]
-nsh-platform-tui = { version = "=0.6.1", default-features = false, features = ["run-app"] }
+nsh-platform-tui = { version = "=0.7.0", default-features = false, features = ["run-app"] }
 ratatui-core = "0.1"
 ratatui-crossterm = "0.1"
 
@@ -31,21 +31,21 @@ libc = "0.2"
 
 [target.'cfg(target_os = "emscripten")'.dependencies]
 # The web (Pyodide): see web/README.md. Rust apps only (no QuickJS).
-nsh-platform-web = { version = "=0.6.1", default-features = false }
+nsh-platform-web = { version = "=0.7.0", default-features = false }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # NSH 0.6 made these optional; 0.5 always had them. `net`: http(s) images,
 # `svg`: SVG images. `sound` (GStreamer audio) stays off: we don't bind it.
-nsh-platform-linux = { version = "=0.6.1", default-features = false, features = ["net", "svg"] }
+nsh-platform-linux = { version = "=0.7.0", default-features = false, features = ["net", "svg"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-nsh-platform-macos = { version = "=0.6.1", default-features = false, features = ["svg"] }
+nsh-platform-macos = { version = "=0.7.0", default-features = false, features = ["svg"] }
 # The Ctrl-C timer's callback (an Objective-C block); the version NSH uses.
 block2 = "0.6"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 # `media`: nsh.video (Media Foundation), optional since NSH 0.6.
-nsh-platform-windows = { version = "=0.6.1", default-features = false, features = ["net", "svg", "media"] }
+nsh-platform-windows = { version = "=0.7.0", default-features = false, features = ["net", "svg", "media"] }
 
 [profile.release]
 strip = "symbols"

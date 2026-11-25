@@ -4,9 +4,9 @@
 //! with the GIL released; the app's code runs on the "nsh-engine" thread
 //! (see `docs/architecture.md`).
 
-use std::sync::Mutex;
+use std::{rc::Rc, sync::Mutex};
 
-use nsh_core::prelude::*;
+use nsh_core::{element::desktop, prelude::*};
 use pyo3::prelude::*;
 
 #[cfg(target_os = "linux")]
@@ -28,6 +28,10 @@ pub(crate) enum RootKind {
 /// The root of the app being run. One app per process: `run_app` owns the
 /// main loop until the window closes.
 pub(crate) static ROOT: Mutex<Option<RootKind>> = Mutex::new(None);
+
+/// The main window's title and content size, from `nsh.run` (headless and
+/// web runs leave them to NSH).
+static MAIN_WINDOW: Mutex<Option<(String, (i32, i32))>> = Mutex::new(None);
 
 /// A component written in Rust, to check the platform works at all.
 pub(crate) struct Hello;
@@ -61,11 +65,28 @@ impl Component for AppRoot {
     fn view(_: (), cx: Scope<NoEvent>) -> impl IntoElement {
         // Before the app's own code runs: it may post jobs from other threads.
         crate::queue::install();
+        // `nsh.run` returns when the window closes, on macOS too (NSH's
+        // default keeps a macOS app running with no window).
+        desktop::set_quit_mode(nsh_core::desktop::QuitMode::LastWindowClosed);
         let kind = ROOT.lock().unwrap_or_else(|e| e.into_inner()).take();
-        match kind {
-            Some(RootKind::Hello) | None => Hello::view((), cx).into_element(),
-            Some(RootKind::Python(root)) => python_root(root),
+        let main = MAIN_WINDOW.lock().unwrap_or_else(|e| e.into_inner()).take();
+        // Since NSH 0.7 a Rust desktop root shows nothing until it declares
+        // a window; off the desktops (web, phones, the terminal) the window
+        // shows its content in the app's one surface. Its content is made
+        // each time it opens.
+        let mut window = desktop::window().id("main");
+        if let Some((title, (width, height))) = main {
+            window = window
+                .title(title)
+                .default_size(size(px(width as f32), px(height as f32)));
         }
+        let content: Rc<dyn Fn() -> AnyElement> = match kind {
+            Some(RootKind::Hello) | None => Rc::new(move || Hello::view((), cx).into_element()),
+            Some(RootKind::Python(root)) => {
+                Rc::new(move || python_root(Python::attach(|py| root.clone_ref(py))))
+            }
+        };
+        window.content(move || content())
     }
 }
 
@@ -130,6 +151,7 @@ pub(crate) fn run(
     app_id: String,
 ) -> PyResult<()> {
     set_root(root);
+    *MAIN_WINDOW.lock().unwrap_or_else(|e| e.into_inner()) = Some((title.clone(), size));
     crate::queue::begin();
 
     let interrupted = py.detach(move || {
