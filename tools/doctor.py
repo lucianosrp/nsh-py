@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Setup checker for nsh-py sprint contributors.
+"""Setup checker for nsh-py contributors who build the extension.
 
-Run this before (or at) a PyCon sprint to see what is missing and the
-exact command to fix it. Standard library only; works on Python 3.10+
-even when uv, Rust, and the compiled extension are not installed.
+Run it to see what is missing and the exact command to fix it. Standard
+library only; works on Python 3.10+ even when uv, Rust, and the compiled
+extension are not installed.
 
 Usage:
     python tools/doctor.py
@@ -373,7 +373,7 @@ def check_uv() -> Result:
         "uv",
         WARN,
         "not found on PATH",
-        f"Install uv: {UV_URL}  (optional, but the sprint uses it)",
+        f"Install uv: {UV_URL}  (optional, but the docs use it)",
     )
 
 

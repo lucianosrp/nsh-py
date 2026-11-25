@@ -1,17 +1,16 @@
 # nsh-py: notes for agents
 
-The sprint guide (tracks, setup, workflow, PR checklist) is part of these notes:
-@SPRINT.md
+Setup, the workflow and the PR checklist for contributors are in `CONTRIBUTING.md`.
 
 Python bindings for [Native Shell (NSH)](https://nsh.dev) by Longbridge: native UIs written in plain Python.
 `pip install nsh-py`, then `import nsh`. (The PyPI name `nsh` is a placeholder upload, so we may ask for it under PEP 541 later.)
 
 ## Goal and constraints
 - **Users:** Python developers who write simple, familiar Python and get native NSH UIs. The API should feel Pythonic, not like Rust.
-- **PyCon sprint:** an in-person sprint where contributors use macOS, Windows and Linux. Most contributors know little Rust, so the pure-Python layer (styled components on `nsh/base`, Tailwind classes, docs, examples, tests) is where most sprint work happens.
-- **Our own repo:** we don't fork NSH and don't depend on upstream changes. Exception: when we (the maintainers, not sprint contributors) hit a real NSH bug, we may file an issue or PR upstream. Sprint contributors never need to touch NSH; work around upstream bugs here and link the upstream issue. The web spike's nsh-core libc fix went upstream this way ([longbridge/nsh#896](https://github.com/longbridge/nsh/pull/896)).
+- **Contributors:** started at the PyCon HK 2026 sprint, where contributors used macOS, Windows and Linux. Most contributors know little Rust, so the pure-Python layer (styled components on `nsh/base`, Tailwind classes, docs, examples, tests) is where most outside work happens.
+- **Our own repo:** we don't fork NSH and don't depend on upstream changes. Exception: when we (the maintainers, not outside contributors) hit a real NSH bug, we may file an issue or PR upstream. Contributors never need to touch NSH; work around upstream bugs here and link the upstream issue. The web spike's nsh-core libc fix went upstream this way ([longbridge/nsh#896](https://github.com/longbridge/nsh/pull/896)).
 - **Distribution:** prebuilt abi3 wheels for Python 3.10+, like Polars, so end users never compile anything.
-- **Later: web.** `web/` runs apps in a browser (Pyodide + nsh-platform-web; the same app file as desktop). Needs NSH 0.5.0+ (it has our emscripten libc fix, [longbridge/nsh#896](https://github.com/longbridge/nsh/pull/896)) and uses a patched copy of NSH's `nsh.js` (one option, not filed upstream yet). Details in `web/README.md`. Not sprint scope.
+- **Later: web.** `web/` runs apps in a browser (Pyodide + nsh-platform-web; the same app file as desktop). Needs NSH 0.5.0+ (it has our emscripten libc fix, [longbridge/nsh#896](https://github.com/longbridge/nsh/pull/896)) and uses a patched copy of NSH's `nsh.js` (one option, not filed upstream yet). Details in `web/README.md`. Not a contributor focus yet.
 - **Later:** a Streamlit-style layer is a separate future project. Keep the layers clean so it can sit on top.
 - **Commits:** make atomic commits as work progresses.
 - **Delegation:** parallel work can be split across Sonnet (Claude) and Grok agents.
@@ -74,5 +73,5 @@ nsh.run(Counter, title="Counter")
 2. ✅ Spike: `nsh.run()` window + Ctrl-C (Linux), Python trees (view/text/button, `class_`, `on_press`), `nsh.signal` + counter, headless pytest via `nsh-testing` (`nsh.testing.open`). Signal design decided: see `docs/architecture.md`.
 3. CI matrix written (`.github/workflows/ci.yml`) but never run (no remote yet). macOS/Windows builds unverified; Ctrl-C there not wired.
 4. `CONTRIBUTING.md`, a `doctor.py` setup checker, and setup guides for each OS.
-5. Before the sprint: Input and List bindings, reference styled components in Python, an issue list and a dry run on each OS.
+5. ✅ PyCon HK 2026 sprint (November 2026). Ready for it: Input and List bindings, reference styled components in Python and an issue list. The setup dry run was only done on Windows (#51).
 6. ✅ Wheels (`.github/workflows/`, never run on GitHub yet): `release.yml` builds abi3 wheels (macOS arm64/x86_64, Windows x64, Linux x86_64 tagged `linux_x86_64`, needs system GTK 4.14+) plus an sdist on `v*` tags and publishes them to GitHub Releases only (no PyPI, experimental). Users run `uv pip install nsh-py --no-index --find-links https://github.com/lucianosrp/nsh-py/releases/expanded_assets/dev-core` (no `v*` tag pushed yet, so the rolling `latest` prerelease doesn't exist; switch the docs to `latest` after the first release). `dev-core.yml` keeps a rolling `dev-core` prerelease of `main` (wheels + `manifest.json` with the Rust `source_hash`); `tools/fetch_core.py` pulls its compiled core into `python/nsh/` so Python-only contributors need no Rust, and `tools/run.py` runs examples against the checkout.
