@@ -1,5 +1,7 @@
 # nsh-py
 
+[![Made at PyCon HK 2026](docs/images/pyconhk-2026-badge.svg)](https://pycon.hk/2026/)
+
 <img width="1200" alt="nsh-py: native apps in plain Python, on macOS, Windows and Linux, powered by Native Shell. Two app windows: a focus timer and a live cluster-load monitor." src="docs/images/banner.png" />
 
 **Native apps in plain Python.** nsh-py brings [Native Shell (NSH)](https://nsh.dev) to Python: you write
@@ -244,6 +246,6 @@ glibc 2.39+ (Ubuntu 24.04+, Debian 13, Fedora 40+, Arch). The Linux wheels are t
 `linux_x86_64` because GTK can't be bundled, which is another reason they live
 on GitHub and not on PyPI.
 
-To work on nsh-py itself, see [SPRINT.md](SPRINT.md).
+To work on nsh-py itself, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-> Early work in progress, built toward a PyCon sprint. Not affiliated with Longbridge.
+> Early work in progress. Not affiliated with Longbridge.
