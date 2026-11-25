@@ -24,19 +24,19 @@ Bind NSH's **public Rust app API** through PyO3. Don't write a script host next 
 - **Ctrl-C:** `Python::check_signals` does nothing off the main thread, so a timer on the GTK/AppKit/Win32 main loop has to attach and check signals.
 - **Handlers:** `on_press(impl IntoListener)` closures must be `'static` but **not `Send`**, so they can hold `Py<PyAny>`. `Root::new(props: Fn() -> P + Send + Sync + 'static)` crosses threads, which is fine for `Py<PyAny>`.
 - **Runtime trees:** `view()`, `text(content)`, `.child()`, `dynamic(|| ...)` (element/flow.rs:204), `when` and `each` all work at runtime, with no macros needed.
-- **Reactive props:** `IntoReactive<T>` is implemented for any `Fn() -> U + 'static` where `U: Into<T>` (element/reactive.rs:1244). That's how Python lambdas become reactive bindings.
-- **Tailwind strings:** `.app_class(impl IntoReactive<Option<SharedString>>)` (element/builder.rs:1139) passes class strings to the core, which parses them natively. This backs `class_="p-4 gap-2"`.
+- **Reactive props:** `IntoReactive<T>` is implemented for any `Fn() -> U + 'static` where `U: Into<T>` (element/reactive.rs:1247). That's how Python lambdas become reactive bindings.
+- **Tailwind strings:** `.app_class(impl IntoReactive<Option<SharedString>>)` (element/builder.rs:1181) passes class strings to the core, which parses them natively. This backs `class_="p-4 gap-2"`.
 - **`Component` trait** (element/component.rs:43): `type Props: Props; type Event: Event; fn view(props, cx: Scope<Event>) -> impl IntoElement`. `Root::of::<C>()` needs `C::Props: Default`.
 - **Platform crates:** `nsh-platform-{linux,macos,windows}` expose the same names, and each only compiles on its own OS. Use them with `default-features = false`, which drops QuickJS.
 - **Example to copy:** `examples/gallery-rs/native/src/main.rs` in the NSH repo shows `set_ui_sets(vec![nsh_base::registry(), ..])`, `Root::of::<App>().tokens(..).app_id(..)` and `run_app`.
 - **Testing:** `nsh-testing` provides `Headless::start(EngineConfig::new(Root::of::<App>()))` with `.press("text:..")`, `.type_text("id:..", ..)` and `.wait_for(..)`. It needs no display.
 
 ## Pins and toolchain
-- NSH crates are pinned to exactly `=0.6.1`. NSH's 0.x releases break the API (0.4.0, 0.5.0 and 0.6.0 did), and the compatibility freeze hasn't started yet. Bump deliberately, one PR per bump, and read the release's "Migrating" notes first.
+- NSH crates are pinned to exactly `=0.7.0`. NSH's 0.x releases break the API (0.4.0, 0.5.0, 0.6.0 and 0.7.0 did), and the compatibility freeze hasn't started yet. Bump deliberately, one PR per bump, and read the release's "Migrating" notes first.
 - ⚠ The crates.io crate named `nsh` is an unrelated shell. Depend on `nsh-core`, `nsh-base` and so on.
 - Rust 1.99.1 is pinned in `rust-toolchain.toml`. This machine's `stable` rustup toolchain is broken (no `rustc`), so use the pinned one.
 - PyO3 0.30: `Python::attach` / `py.detach` (the old names were `with_gil` / `allow_threads`).
-- NSH source is in `~/.cargo/registry/src/index.crates.io-*/nsh-*-0.6.1/`. Read it there, since it matches our pin. A checkout of NSH `main` (newer) at `/tmp/nsh-src` belongs to another session, so read it only and never build there.
+- NSH source is in `~/.cargo/registry/src/index.crates.io-*/nsh-*-0.7.0/`. Read it there, since it matches our pin. A checkout of NSH `main` (newer) at `/tmp/nsh-src` belongs to another session, so read it only and never build there.
 
 ## Build
 ```sh
