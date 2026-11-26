@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from nsh._element import Child, Element, Prop, merge_class
 from nsh.primitives import text, view
+from nsh.primitives.input import KIND as INPUT_KIND
 
 LABEL_CLASS = "text-sm font-medium"
 HELP_CLASS = "text-xs text-muted-foreground"
@@ -21,6 +22,9 @@ def field(
 ) -> Element:
     """Wrap an input control with a label and optional help and error text.
 
+    A direct `nsh.input` uses `label` as its accessible name by default.
+    An explicit `accessibility_label` on the input takes precedence.
+
     Pass `error` as a string or a binding. `None` and empty strings hide the error.
     A binding can show or hide the error as the signals it reads change.
 
@@ -31,6 +35,14 @@ def field(
             error=lambda: "Include an @ sign." if email() and "@" not in email() else None,
         )
     """
+    if (
+        isinstance(control, Element)
+        and control.kind == INPUT_KIND
+        and control.props.get("accessibility_label") is None
+    ):
+        control = Element(
+            control.kind, {**control.props, "accessibility_label": label}, control.children
+        )
     children: list[Child] = [text(label, class_=LABEL_CLASS), control]
     if help is not None:
         children.append(text(help, class_=HELP_CLASS))

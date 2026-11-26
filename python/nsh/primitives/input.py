@@ -15,6 +15,7 @@ def input(  # noqa: A001
     value: Prop[str] | None = None,
     *,
     placeholder: Prop[str] | None = None,
+    accessibility_label: Prop[str] | None = None,
     on_change: Callable[[str], Any] | None = None,
     on_submit: Callable[[str], Any] | None = None,
     class_: Prop[str] | None = None,
@@ -41,6 +42,9 @@ def input(  # noqa: A001
     presses Enter (in a one-line field; in a `multiline` field Enter adds
     a line). An exception they raise is logged and the app keeps running.
 
+    `accessibility_label` names the input for assistive technology. Pass a
+    string or a callable that returns the current name.
+
     `disabled` greys the field out (`disabled:` styles) and blocks edits.
     `readonly` also blocks edits, but the field keeps its ordinary look:
     the text can be selected and copied. `masked` hides the characters
@@ -63,6 +67,7 @@ def input(  # noqa: A001
         props(
             value=value,
             placeholder=placeholder,
+            accessibility_label=accessibility_label,
             on_change=on_change,
             on_submit=on_submit,
             class_=class_,

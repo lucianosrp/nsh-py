@@ -348,10 +348,10 @@ def test_dataframe_example():
 def test_form_example():
     Form = load_example("form")["Form"]
     with open(Form) as app:
-        app.type_text("id:name", "Ada")
+        app.type_text("label:Name", "Ada")
         app.wait_for("Hello, Ada")
-        app.type_text("id:email", "ada@example.org")
-        app.type_text("id:password", "s3cret")
+        app.type_text("label:Email", "ada@example.org")
+        app.type_text("label:Password", "s3cret")
         app.type_text("id:email", "\n")
         app.wait_for("Welcome, Ada! We'll write to ada@example.org.")
         assert app.value("id:name") == ""
