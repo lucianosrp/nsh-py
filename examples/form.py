@@ -1,4 +1,4 @@
-"""A sign-up form: text inputs, a signal per field, and Enter to submit."""
+"""A sign-up form with labelled inputs, live validation, and Enter to submit."""
 
 import nsh
 
@@ -15,6 +15,12 @@ def Form():
     def valid():
         return bool(name().strip()) and "@" in email() and bool(password())
 
+    def email_error():
+        address = email()
+        if address and "@" not in address:
+            return "Include an @ sign in your email address."
+        return None
+
     def send():
         if valid():
             sent.set(f"Welcome, {name().strip()}! We'll write to {email().strip()}.")
@@ -24,25 +30,25 @@ def Form():
 
     return nsh.view(
         nsh.text("Sign up", class_="text-xl font-semibold text-foreground"),
-        nsh.input(
-            name,
-            placeholder="Your name",
-            class_=FIELD,
-            test_id="name",
+        nsh.field(
+            "Name",
+            nsh.input(name, class_=FIELD, test_id="name"),
         ),
-        nsh.input(
-            email,
-            placeholder="Email",
-            on_submit=lambda _: send(),  # Enter in the field
-            class_=FIELD,
-            test_id="email",
+        nsh.field(
+            "Email",
+            nsh.input(
+                email,
+                placeholder="you@example.com",
+                on_submit=lambda _: send(),  # Enter in the field
+                class_=FIELD,
+                test_id="email",
+            ),
+            help="Use an address you check regularly.",
+            error=email_error,
         ),
-        nsh.input(
-            password,
-            placeholder="Password",
-            masked=True,
-            class_=FIELD,
-            test_id="password",
+        nsh.field(
+            "Password",
+            nsh.input(password, masked=True, class_=FIELD, test_id="password"),
         ),
         nsh.text(lambda: f"Hello, {name() or 'stranger'}", class_="text-sm text-foreground"),
         nsh.button("Send", on_press=send, test_id="send"),

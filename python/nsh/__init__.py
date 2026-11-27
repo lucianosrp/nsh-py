@@ -9,7 +9,7 @@ from nsh._engine import Effect, Timer, call_soon, effect, set_interval, set_time
 from nsh._runtime import run
 from nsh._signals import Computed, Signal, computed, signal
 from nsh._window import Window, current_window, quit
-from nsh.components import alert, badge, button, card, separator, skeleton, table
+from nsh.components import alert, badge, button, card, field, separator, skeleton, table
 from nsh.primitives import (
     checkbox,
     image,
@@ -52,6 +52,7 @@ __all__ = [
     "current_window",
     "each",
     "effect",
+    "field",
     "image",
     "input",
     "progress",

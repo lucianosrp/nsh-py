@@ -4,6 +4,7 @@
 //! (NSH's `default_value`); a callable is the text itself, controlled
 //! (NSH's `value`): the field shows what it returns, again whenever the
 //! signals it read change), `placeholder` (a string or a callable),
+//! `accessibility_label` (a name for assistive technology),
 //! `disabled` (a bool or a callable: no edits, `disabled:` styles),
 //! `readonly` (a bool or a callable: no edits, ordinary look), `masked`
 //! (hide characters; passwords), `max_length` (an int or a callable),
@@ -37,6 +38,9 @@ pub(super) fn build(
     }
     if let Some(placeholder) = props::get(props, "placeholder")? {
         el = el.placeholder(props::string(&placeholder)?.map(|s| s.to_string()));
+    }
+    if let Some(label) = props::get(props, "accessibility_label")? {
+        el = el.label(props::string(&label)?);
     }
     el = disabled_and_readonly(el, props)?;
     if let Some(masked) = props::get(props, "masked")? {
